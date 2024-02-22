@@ -1,0 +1,21 @@
+{
+  "languageserver": {
+    "ccls": {
+      "command": "ccls",
+      "filetypes": ["cc", "cpp"],
+      "rootPatterns": ["build/compile_commands.json"],
+      "initializationOptions": {
+        "cache": {
+          "directory": ".ccls-cache"
+        },
+        "client": {
+          "snippetSupport": true
+        },
+        "compilationDatabaseDirectory": "build",
+        "clang": {
+          "extraArgs": [ "-std=c++17", "--gcc-toolchain=/usr" ]
+        }
+      }
+    }
+  }
+}
