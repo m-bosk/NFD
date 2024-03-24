@@ -141,6 +141,10 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
      (wouldViolateScope(inFace, interest, outFace)))
     return false;
 
+  // Ensure the priority of the face matches the interest's priority, when interest has priority
+  if (interest.getPriority() && outFace.hasPriority() && outFace.getPriority() != interest.getPriority())
+    return false;
+
   if (wantUnused) {
     // nexthop must not have unexpired out-record
     auto outRecord = pitEntry->findOutRecord(outFace);
