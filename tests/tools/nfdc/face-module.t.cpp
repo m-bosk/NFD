@@ -42,7 +42,7 @@ const std::string NONQUERY_OUTPUT =
     " congestion={base-marking-interval=12345ms default-threshold=54321B} mtu=1024"
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
     " flags={non-local permanent multi-access}\n"
-  "faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
+  "faceid=745 priority=2 remote=fd://75 local=unix:///var/run/nfd.sock"
     " congestion={base-marking-interval=100ms default-threshold=65536B} mtu=8800"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
     " flags={local on-demand point-to-point local-fields lp-reliability congestion-marking}\n";
@@ -70,6 +70,7 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
             .setNOutBytes(1353592);
     FaceStatus payload2;
     payload2.setFaceId(745)
+            .setPriority(2)
             .setRemoteUri("fd://75")
             .setLocalUri("unix:///var/run/nfd.sock")
             .setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL)
@@ -99,7 +100,7 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
 }
 
 const std::string QUERY_OUTPUT =
-  "faceid=177 remote=tcp4://53.239.9.114:6363 local=tcp4://164.0.31.106:20396"
+  "faceid=177 priority=2 remote=tcp4://53.239.9.114:6363 local=tcp4://164.0.31.106:20396"
     " congestion={base-marking-interval=555ms default-threshold=10000B} mtu=2000"
     " counters={in={2325i 1110d 79n 4716834B} out={2278i 485d 841n 308108B}}"
     " flags={non-local persistent point-to-point}\n";
@@ -111,13 +112,15 @@ BOOST_AUTO_TEST_CASE(NormalQuery)
     BOOST_CHECK_EQUAL(interest.getName().size(), 5);
     FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
     FaceQueryFilter expectedFilter;
-    expectedFilter.setRemoteUri("tcp4://53.239.9.114:6363")
+    expectedFilter.setPriority(2)
+                  .setRemoteUri("tcp4://53.239.9.114:6363")
                   .setLocalUri("tcp4://164.0.31.106:20396")
                   .setUriScheme("tcp4");
     BOOST_CHECK_EQUAL(filter, expectedFilter);
 
     FaceStatus payload;
     payload.setFaceId(177)
+           .setPriority(2)
            .setRemoteUri("tcp4://53.239.9.114:6363")
            .setLocalUri("tcp4://164.0.31.106:20396")
            .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
@@ -137,7 +140,7 @@ BOOST_AUTO_TEST_CASE(NormalQuery)
     this->sendDataset(interest.getName(), payload);
   };
 
-  this->execute("face list tcp://53.239.9.114 scheme tcp4 local tcp://164.0.31.106:20396");
+  this->execute("face list tcp://53.239.9.114 priority 2 scheme tcp4 local tcp://164.0.31.106:20396");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal(QUERY_OUTPUT));
   BOOST_CHECK(err.is_empty());
@@ -434,6 +437,8 @@ BOOST_AUTO_TEST_CASE(CreatingWithParams)
 {
   this->processInterest = [this] (const Interest& interest) {
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
+    BOOST_REQUIRE(req.hasPriority());
+    BOOST_CHECK_EQUAL(req.getPriority(), 2);
     BOOST_REQUIRE(req.hasUri());
     BOOST_CHECK_EQUAL(req.getUri(), "udp4://22.91.89.51:19903");
     BOOST_REQUIRE(req.hasLocalUri());
@@ -451,6 +456,7 @@ BOOST_AUTO_TEST_CASE(CreatingWithParams)
 
     ControlParameters resp;
     resp.setFaceId(301)
+        .setPriority(2)
         .setUri("udp4://22.91.89.51:19903")
         .setLocalUri("udp4://98.68.23.71:6363")
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT)
@@ -462,11 +468,11 @@ BOOST_AUTO_TEST_CASE(CreatingWithParams)
     this->succeedCommand(interest, resp);
   };
 
-  this->execute("face create udp://22.91.89.51:19903 permanent local udp://98.68.23.71 reliability on "
+  this->execute("face create udp://22.91.89.51:19903 permanent priority 2 local udp://98.68.23.71 reliability on "
                 "congestion-marking on congestion-marking-interval 100 "
                 "default-congestion-threshold 65536 mtu 10000");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-created id=301 local=udp4://98.68.23.71:6363 "
+  BOOST_CHECK(out.is_equal("face-created id=301 priority=2 local=udp4://98.68.23.71:6363 "
                            "remote=udp4://22.91.89.51:19903 persistency=permanent "
                            "reliability=on congestion-marking=on "
                            "congestion-marking-interval=100ms default-congestion-threshold=65536B "
@@ -994,7 +1000,8 @@ BOOST_AUTO_TEST_CASE(Ambiguous)
   BOOST_CHECK(err.is_equal("Multiple faces match specified remote FaceUri. "
                            "Re-run the command with a FaceId: "
                            "6720 (local=udp4://202.83.168.28:56363), "
-                           "31066 (local=udp4://25.90.26.32:56363)\n"));
+                           "31066 (local=udp4://25.90.26.32:56363), "
+                           "46853 (local=udp4://232.23.34.54:56363)\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCanonization)
@@ -1039,6 +1046,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <faces>
     <face>
       <faceId>134</faceId>
+      <priority>2</priority>
       <remoteUri>udp4://233.252.0.4:6363</remoteUri>
       <localUri>udp4://192.0.2.1:6363</localUri>
       <faceScope>non-local</faceScope>
@@ -1102,7 +1110,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT =
   "Faces:\n"
-  "  faceid=134 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
+  "  faceid=134 priority=2 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
     " flags={non-local permanent multi-access}\n"
   "  faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
@@ -1115,6 +1123,7 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
   this->fetchStatus();
   FaceStatus payload1;
   payload1.setFaceId(134)
+          .setPriority(2)
           .setRemoteUri("udp4://233.252.0.4:6363")
           .setLocalUri("udp4://192.0.2.1:6363")
           .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
