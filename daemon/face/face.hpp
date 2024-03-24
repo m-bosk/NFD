@@ -207,6 +207,33 @@ public: // properties
     m_id = id;
   }
 
+  bool
+  hasPriority() const noexcept
+  {
+    return m_priority.has_value();
+  }
+
+  /**
+   * \brief Returns the face priority.
+   */
+  const InterestPriority&
+  getPriority() const noexcept
+  {
+    BOOST_ASSERT(this->hasPriority());
+    return m_priority.value();
+  }
+
+  /**
+   * \brief Sets the face priority.
+   * \note Normally, this should only be invoked by the
+   *       ethernet channel during face creation.
+   */
+  void
+  setPriority(const InterestPriority& priority) noexcept
+  {
+    m_priority = priority;
+  }
+
   /**
    * \brief Returns a FaceUri representing the local endpoint.
    */
@@ -326,6 +353,7 @@ public: // properties
 
 private:
   FaceId m_id = INVALID_FACEID;
+  std::optional<InterestPriority> m_priority;
   unique_ptr<LinkService> m_service;
   unique_ptr<Transport> m_transport;
   FaceCounters m_counters;
