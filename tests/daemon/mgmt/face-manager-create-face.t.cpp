@@ -61,6 +61,19 @@ public:
   }
 };
 
+class TcpFacePersistentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  }
+};
+
 class TcpFacePermanent
 {
 public:
@@ -68,6 +81,19 @@ public:
   getParameters()
   {
     return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  }
+};
+
+class TcpFacePermanentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
       .setUri("tcp4://127.0.0.1:26363")
       .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   }
@@ -97,6 +123,19 @@ public:
   }
 };
 
+class UdpFacePersistentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
+      .setUri("udp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  }
+};
+
 class UdpFacePermanent
 {
 public:
@@ -104,6 +143,19 @@ public:
   getParameters()
   {
     return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  }
+};
+
+class UdpFacePermanentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
       .setUri("udp4://127.0.0.1:26363")
       .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   }
@@ -303,13 +355,18 @@ public:
 };
 
 // Pairs of CreateCommand and success/failure status
+// NOTE: Cannot test Ethernet due to required root permissions
 using TestCases = boost::mp11::mp_list<
   boost::mp11::mp_list<TcpFaceOnDemand, CommandFailure<406>>,
   boost::mp11::mp_list<TcpFacePersistent, CommandSuccess>,
+  boost::mp11::mp_list<TcpFacePersistentWithPriority, CommandFailure<406>>,
   boost::mp11::mp_list<TcpFacePermanent, CommandSuccess>,
+  boost::mp11::mp_list<TcpFacePermanentWithPriority, CommandFailure<406>>,
   boost::mp11::mp_list<UdpFaceOnDemand, CommandFailure<406>>,
   boost::mp11::mp_list<UdpFacePersistent, CommandSuccess>,
+  boost::mp11::mp_list<UdpFacePersistentWithPriority, CommandFailure<406>>,
   boost::mp11::mp_list<UdpFacePermanent, CommandSuccess>,
+  boost::mp11::mp_list<UdpFacePermanentWithPriority, CommandFailure<406>>,
   boost::mp11::mp_list<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
   boost::mp11::mp_list<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
   boost::mp11::mp_list<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
@@ -350,6 +407,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
       ControlParameters actualParams(actual.getBody());
 
       BOOST_CHECK(actualParams.hasFaceId());
+      if (expectedParams.hasPriority()) {
+        BOOST_CHECK_EQUAL(expectedParams.getPriority(), actualParams.getPriority());
+      }
       BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
 
       if (actual.getCode() == 200) {

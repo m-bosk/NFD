@@ -415,6 +415,13 @@ BOOST_AUTO_TEST_CASE(CreateFaceInvalidRequest)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20072"),
              {},
+             {2, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "TCP faces do not support priority"});
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20072"),
+             {},
              {{}, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Outgoing TCP faces do not support on-demand persistency"});

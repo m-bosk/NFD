@@ -157,6 +157,12 @@ TcpFactory::doCreateFace(const CreateFaceRequest& req,
     return;
   }
 
+  if (req.params.priority) {
+    NFD_LOG_TRACE("createFace: unsupported Priority");
+    onFailure(406, "TCP faces do not support priority");
+    return;
+  }
+
   if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace: unsupported FacePersistency");
     onFailure(406, "Outgoing TCP faces do not support on-demand persistency");

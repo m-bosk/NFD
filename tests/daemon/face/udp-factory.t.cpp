@@ -1142,6 +1142,13 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceInvalidRequest, UdpFactoryFixture)
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
              {},
+             {2, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "UDP faces do not support priority"});
+
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20072"),
+             {},
              {{}, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Outgoing UDP faces do not support on-demand persistency"});
