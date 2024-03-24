@@ -1088,7 +1088,7 @@ BOOST_FIXTURE_TEST_CASE(CreateFace, UdpFactoryFixture)
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   createChannel("127.0.0.1", 20071);
@@ -1096,37 +1096,37 @@ BOOST_FIXTURE_TEST_CASE(CreateFace, UdpFactoryFixture)
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20073"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, true, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, true, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20073"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, true},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, true},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20074"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, 1000, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, 1000, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
@@ -1135,35 +1135,35 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceInvalidRequest, UdpFactoryFixture)
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
              FaceUri("udp4://127.0.0.1:20071"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Unicast UDP faces cannot be created with a LocalUri"});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Outgoing UDP faces do not support on-demand persistency"});
 
   createFace(factory,
              FaceUri("udp4://233.252.0.1:23252"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Cannot create multicast UDP faces"});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, true, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, true, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Local fields can only be enabled on faces with local scope"});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 42, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 42, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Override MTU cannot be less than 64"});
 }

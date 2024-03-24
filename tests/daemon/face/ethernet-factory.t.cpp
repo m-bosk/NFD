@@ -474,7 +474,7 @@ BOOST_FIXTURE_TEST_CASE(CreateFace, EthernetFactoryFixtureWithRealNetifs)
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              FaceUri("dev://eth0"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
@@ -483,37 +483,37 @@ BOOST_FIXTURE_TEST_CASE(CreateFace, EthernetFactoryFixtureWithRealNetifs)
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              localUri,
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              localUri,
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:53]"),
              localUri,
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:57]"),
              localUri,
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, true, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, true, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5b]"),
              localUri,
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, true},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, true},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5c]"),
              localUri,
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 1000, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 1000, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
@@ -522,42 +522,42 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceInvalidRequest, EthernetFactoryFixture)
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme"});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              FaceUri("udp4://127.0.0.1:20071"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme"});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              FaceUri("dev://eth0"),
-             {ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Outgoing Ethernet faces do not support on-demand persistency"});
 
   createFace(factory,
              FaceUri("ether://[01:00:5e:90:10:5e]"),
              FaceUri("dev://eth0"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Cannot create multicast Ethernet faces"});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              FaceUri("dev://eth0"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, true, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, true, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Local fields can only be enabled on faces with local scope"});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              FaceUri("dev://eth0"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 42, false, false, false},
+             {{}, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 42, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Override MTU cannot be less than 64"});
 }

@@ -85,6 +85,7 @@ using EndpointId = std::variant<std::monostate, ethernet::Address, udp::Endpoint
  */
 struct FaceParams
 {
+  std::optional<InterestPriority> priority;
   ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   std::optional<time::nanoseconds> baseCongestionMarkingInterval;
   std::optional<uint64_t> defaultCongestionThreshold;
