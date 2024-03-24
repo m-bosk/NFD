@@ -117,6 +117,9 @@ FaceManager::createFace(const ControlParameters& parameters,
   }
 
   face::FaceParams faceParams;
+  if (parameters.hasPriority()) {
+    faceParams.priority = parameters.getPriority();
+  }
   faceParams.persistency = parameters.getFacePersistency();
   if (parameters.hasBaseCongestionMarkingInterval()) {
     faceParams.baseCongestionMarkingInterval = parameters.getBaseCongestionMarkingInterval();
@@ -175,6 +178,9 @@ makeUpdateFaceResponse(const Face& face)
   ControlParameters params;
   params.setFaceId(face.getId())
         .setFacePersistency(face.getPersistency());
+  if (face.hasPriority()) {
+    params.setPriority(face.getPriority());
+  }
   copyMtu(face, params);
 
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
@@ -286,6 +292,12 @@ FaceManager::updateFace(const Interest& interest,
   ControlParameters response;
   bool areParamsValid = true;
 
+  if (parameters.hasPriority() && !face->hasPriority()) {
+    NFD_LOG_TRACE("cannot change priority of a face without priority");
+    areParamsValid = false;
+    response.setPriority(parameters.getPriority());
+  }
+
   if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       face->getScope() != ndn::nfd::FACE_SCOPE_LOCAL) {
@@ -356,6 +368,10 @@ copyFaceProperties(const Face& face, T& to)
     .setFaceScope(face.getScope())
     .setFacePersistency(face.getPersistency())
     .setLinkType(face.getLinkType());
+
+  if (face.hasPriority()) {
+    to.setPriority(face.getPriority());
+  }
 
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
   if (linkService != nullptr) {
