@@ -449,6 +449,12 @@ matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face)
     return false;
   }
 
+  if (filter.hasPriority() &&
+      (!face.hasPriority() ||
+      filter.getPriority() != static_cast<InterestPriority>(face.getPriority()))) {
+    return false;
+  }
+
   if (filter.hasUriScheme() &&
       filter.getUriScheme() != face.getRemoteUri().getScheme() &&
       filter.getUriScheme() != face.getLocalUri().getScheme()) {

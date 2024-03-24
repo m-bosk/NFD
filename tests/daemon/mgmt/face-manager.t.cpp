@@ -226,6 +226,7 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto face1 = addFace(REMOVE_LAST_NOTIFICATION); // dummy://
   auto face2 = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // dummy://, local
   auto face3 = addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST); // test://
+  auto face4 = addFace(REMOVE_LAST_NOTIFICATION | SET_PRIORITY_TEST); // priority://
 
   auto generateQuery = [] (const auto& filter) {
     return Interest(Name("/localhost/nfd/faces/query").append(tlv::GenericNameComponent, filter.wireEncode()))
@@ -235,16 +236,18 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto schemeQuery = generateQuery(FaceQueryFilter().setUriScheme("dummy"));
   auto idQuery = generateQuery(FaceQueryFilter().setFaceId(face1->getId()));
   auto scopeQuery = generateQuery(FaceQueryFilter().setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL));
+  auto priorityQuery = generateQuery(FaceQueryFilter().setPriority(face4->getPriority()));
   auto invalidQueryName = Name("/localhost/nfd/faces/query")
                           .append(tlv::GenericNameComponent, ndn::makeStringBlock(tlv::Content, "invalid"));
   auto invalidQuery = Interest(invalidQueryName).setCanBePrefix(true);
 
   receiveInterest(schemeQuery); // face1 and face2 expected
   receiveInterest(idQuery); // face1 expected
-  receiveInterest(scopeQuery); // face1 and face3 expected
+  receiveInterest(scopeQuery); // face1, face3 and face4 expected
+  receiveInterest(priorityQuery); // face4 expected
   receiveInterest(invalidQuery); // nack expected
 
-  BOOST_REQUIRE_EQUAL(m_responses.size(), 4);
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 5);
 
   Block content;
   ndn::nfd::FaceStatus status;
@@ -265,14 +268,22 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
 
   content = m_responses[2].getContent();
   content.parse();
-  BOOST_CHECK_EQUAL(content.elements().size(), 2); // face1 and face3
+  BOOST_CHECK_EQUAL(content.elements().size(), 3); // face1, face3 and face4
   status.wireDecode(content.elements()[0]);
   BOOST_CHECK_EQUAL(face1->getId(), status.getFaceId());
   status.wireDecode(content.elements()[1]);
   BOOST_CHECK_EQUAL(face3->getId(), status.getFaceId());
 
+  content = m_responses[3].getContent();
+  content.parse();
+  BOOST_CHECK_EQUAL(content.elements().size(), 1); // face4
+  status.wireDecode(content.elements()[0]);
+  BOOST_CHECK_EQUAL(face4->getId(), status.getFaceId());
+  BOOST_REQUIRE(status.hasPriority());
+  BOOST_CHECK_EQUAL(face4->getPriority(), status.getPriority());
+
   ControlResponse expectedResponse(400, "Malformed filter"); // nack, 400, malformed filter
-  BOOST_CHECK_EQUAL(checkResponse(3, invalidQueryName, expectedResponse, tlv::ContentType_Nack),
+  BOOST_CHECK_EQUAL(checkResponse(4, invalidQueryName, expectedResponse, tlv::ContentType_Nack),
                     CheckResponseResult::OK);
 }
 
