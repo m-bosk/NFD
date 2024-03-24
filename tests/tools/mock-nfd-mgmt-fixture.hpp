@@ -143,6 +143,30 @@ protected: // StatusDataset
     this->sendDatasetReply(prefix, buffer);
   }
 
+  /** \brief Send three WireEncodables in reply to StatusDataset request.
+   *  \param prefix dataset prefix without version and segment
+   *  \param payload1 first vector item
+   *  \param payload2 second vector item
+   *  \param payload3 third vector item
+   *  \note all payloads must fit in one Data
+   *  \pre Interest for dataset has been expressed, sendDataset has not been invoked
+   */
+  template<typename T1, typename T2, typename T3>
+  void
+  sendDataset(const Name& prefix, const T1& payload1, const T2& payload2, const T3& payload3)
+  {
+    BOOST_CONCEPT_ASSERT((ndn::WireEncodable<T1>));
+    BOOST_CONCEPT_ASSERT((ndn::WireEncodable<T2>));
+    BOOST_CONCEPT_ASSERT((ndn::WireEncodable<T3>));
+
+    ndn::encoding::EncodingBuffer buffer;
+    payload3.wireEncode(buffer);
+    payload2.wireEncode(buffer);
+    payload1.wireEncode(buffer);
+
+    this->sendDatasetReply(prefix, buffer);
+  }
+
 private:
   virtual void
   processEventsOverride(time::milliseconds timeout)

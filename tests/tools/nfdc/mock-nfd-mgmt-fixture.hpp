@@ -82,7 +82,7 @@ protected:
     }
 
     if (filter == FaceQueryFilter().setRemoteUri("udp4://225.131.75.231:56363")) {
-      FaceStatus faceStatus1, faceStatus2;
+      FaceStatus faceStatus1, faceStatus2, faceStatus3;
       faceStatus1.setFaceId(6720)
                  .setLocalUri("udp4://202.83.168.28:56363")
                  .setRemoteUri("udp4://225.131.75.231:56363")
@@ -91,7 +91,11 @@ protected:
                  .setLocalUri("udp4://25.90.26.32:56363")
                  .setRemoteUri("udp4://225.131.75.231:56363")
                  .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
-      this->sendDataset(interest.getName(), faceStatus1, faceStatus2);
+      faceStatus3.setFaceId(46853)
+                 .setLocalUri("udp4://232.23.34.54:56363")
+                 .setRemoteUri("udp4://225.131.75.231:56363")
+                 .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
+      this->sendDataset(interest.getName(), faceStatus1, faceStatus2, faceStatus3);
       return true;
     }
 
