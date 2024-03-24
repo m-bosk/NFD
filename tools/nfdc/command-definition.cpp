@@ -62,6 +62,8 @@ operator<<(std::ostream& os, ArgValueType vt)
       return os << "FacePersistency";
     case ArgValueType::ROUTE_ORIGIN:
       return os << "RouteOrigin";
+    case ArgValueType::PRIORITY:
+      return os << "Priority";
   }
   return os << static_cast<int>(vt);
 }
@@ -92,6 +94,8 @@ getMetavarFromType(ArgValueType vt)
       return "persistency";
     case ArgValueType::ROUTE_ORIGIN:
       return "origin";
+    case ArgValueType::PRIORITY:
+      return "priority";
   }
   NDN_CXX_UNREACHABLE;
 }
@@ -286,6 +290,10 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token)
 
     case ArgValueType::FACE_URI:
       return ndn::FaceUri(token);
+
+    case ArgValueType::PRIORITY:
+      return ndn::InterestPriority(static_cast<uint8_t>(
+        boost::lexical_cast<uint64_t>(token)));
 
     case ArgValueType::FACE_ID_OR_URI:
       try {
