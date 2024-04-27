@@ -3,9 +3,11 @@ nfdc-face
 
 SYNOPSIS
 --------
-| nfdc face [list [[remote] <FACEURI>] [local <FACEURI>] [scheme <SCHEME>]]
+| nfdc face [list [[remote] <FACEURI>] [priority <PRIORITY>] [local <FACEURI>]
+|                 [scheme <SCHEME>]]
 | nfdc face show [id] <FACEID>
-| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>]
+| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>]
+|                  [priority <PRIORITY>] [local <FACEURI>]
 |                  [reliability on|off] [congestion-marking on|off]
 |                  [congestion-marking-interval <MARKING-INTERVAL>]
 |                  [default-congestion-threshold <CONGESTION-THRESHOLD>]
@@ -81,6 +83,10 @@ OPTIONS
     - unix
     - dev
 
+<PRIORITY>
+    Priority of the Interests the face accepts.
+    Number between 0 and 7. Defaults to 0.
+
 <PERSISTENCY>
     Either "persistent" or "permanent".
     A "persistent" face (the default) is closed when a socket error occurs.
@@ -130,6 +136,9 @@ nfdc face create remote udp://router.example.net
 
 nfdc face create remote ether://[08:00:27:01:01:01] local dev://eth2 persistency permanent
     Create a face with the specified remote FaceUri, local FaceUri, and persistency.
+
+nfdc face create remote udp://router.example.net priority 4
+    Create a face with the specified remote FaceUri and accept only interests with priority 4.
 
 nfdc face create remote udp://router.example.net reliability on
     Create a face with the specified remote FaceUri and enable NDNLP reliability.
