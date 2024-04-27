@@ -84,7 +84,6 @@ public:
     auto face = make_shared<DummyFace>(uri, uri, scope);
     if (flags & SET_PRIORITY_TEST) {
       face->setPriority(2);
-      BOOST_REQUIRE(face->hasPriority());
     }
     m_faceTable.add(face);
 
@@ -189,7 +188,6 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
   BOOST_REQUIRE(face != nullptr);
 
   // check face properties
-  BOOST_REQUIRE(face->hasPriority());
   BOOST_CHECK_EQUAL(status.getPriority(), face->getPriority());
   BOOST_CHECK_EQUAL(status.getRemoteUri(), face->getRemoteUri().toString());
   BOOST_CHECK_EQUAL(status.getLocalUri(), face->getLocalUri().toString());
@@ -279,7 +277,6 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   BOOST_CHECK_EQUAL(content.elements().size(), 1); // face4
   status.wireDecode(content.elements()[0]);
   BOOST_CHECK_EQUAL(face4->getId(), status.getFaceId());
-  BOOST_REQUIRE(status.hasPriority());
   BOOST_CHECK_EQUAL(face4->getPriority(), status.getPriority());
 
   ControlResponse expectedResponse(400, "Malformed filter"); // nack, 400, malformed filter
@@ -378,7 +375,6 @@ BOOST_AUTO_TEST_CASE(FaceEventCreated)
   ndn::nfd::FaceEventNotification notification(payload);
   BOOST_CHECK_EQUAL(notification.getKind(), ndn::nfd::FACE_EVENT_CREATED);
   BOOST_CHECK_EQUAL(notification.getFaceId(), faceId);
-  BOOST_REQUIRE(notification.hasPriority());
   BOOST_CHECK_EQUAL(notification.getPriority(), 2);
   BOOST_CHECK_EQUAL(notification.getRemoteUri(), face->getRemoteUri().toString());
   BOOST_CHECK_EQUAL(notification.getLocalUri(), face->getLocalUri().toString());
@@ -455,7 +451,6 @@ BOOST_AUTO_TEST_CASE(FaceEventDestroyed)
   ndn::nfd::FaceEventNotification notification(payload);
   BOOST_CHECK_EQUAL(notification.getKind(), ndn::nfd::FACE_EVENT_DESTROYED);
   BOOST_CHECK_EQUAL(notification.getFaceId(), faceId);
-  BOOST_REQUIRE(notification.hasPriority());
   BOOST_CHECK_EQUAL(notification.getPriority(), face->getPriority());
   BOOST_CHECK_EQUAL(notification.getRemoteUri(), face->getRemoteUri().toString());
   BOOST_CHECK_EQUAL(notification.getLocalUri(), face->getLocalUri().toString());

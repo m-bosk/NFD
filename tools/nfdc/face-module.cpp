@@ -407,11 +407,7 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
   os << "<face>";
 
   os << "<faceId>" << item.getFaceId() << "</faceId>";
-
-  if (item.hasPriority()) {
-    os << "<priority>" << item.getPriority() << "</priority>";
-  }
-
+  os << "<priority>" << item.getPriority() << "</priority>";
   os << "<remoteUri>" << xml::Text{item.getRemoteUri()} << "</remoteUri>";
   os << "<localUri>" << xml::Text{item.getLocalUri()} << "</localUri>";
 
@@ -491,9 +487,7 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
   text::ItemAttributes ia(wantMultiLine, 10);
 
   os << ia("faceid") << item.getFaceId();
-  if (item.hasPriority()) {
-    os << ia("priority") << item.getPriority();
-  }
+  os << ia("priority") << item.getPriority();
   os << ia("remote") << item.getRemoteUri();
   os << ia("local") << item.getLocalUri();
 
@@ -556,11 +550,9 @@ FaceModule::printSuccess(std::ostream& os,
 {
   text::ItemAttributes ia;
   os << actionSummary << ' '
-     << ia("id") << resp.getFaceId();
-  if (resp.hasPriority()) {
-    os << ia("priority") << resp.getPriority();
-  }
-  os << ia("local") << resp.getLocalUri()
+     << ia("id") << resp.getFaceId()
+     << ia("priority") << resp.getPriority()
+     << ia("local") << resp.getLocalUri()
      << ia("remote") << resp.getUri()
      << ia("persistency") << resp.getFacePersistency();
   printFaceParams(os, ia, resp);

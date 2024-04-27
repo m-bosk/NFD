@@ -177,10 +177,8 @@ makeUpdateFaceResponse(const Face& face)
 {
   ControlParameters params;
   params.setFaceId(face.getId())
+        .setPriority(face.getPriority())
         .setFacePersistency(face.getPersistency());
-  if (face.hasPriority()) {
-    params.setPriority(face.getPriority());
-  }
   copyMtu(face, params);
 
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
@@ -292,12 +290,6 @@ FaceManager::updateFace(const Interest& interest,
   ControlParameters response;
   bool areParamsValid = true;
 
-  if (parameters.hasPriority() && !face->hasPriority()) {
-    NFD_LOG_TRACE("cannot change priority of a face without priority");
-    areParamsValid = false;
-    response.setPriority(parameters.getPriority());
-  }
-
   if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       face->getScope() != ndn::nfd::FACE_SCOPE_LOCAL) {
@@ -336,6 +328,9 @@ FaceManager::updateFace(const Interest& interest,
   }
 
   // All specified properties are valid, so make changes
+  if (parameters.hasPriority()) {
+    face->setPriority(parameters.getPriority());
+  }
   if (parameters.hasFacePersistency()) {
     face->setPersistency(parameters.getFacePersistency());
   }
@@ -363,15 +358,12 @@ static void
 copyFaceProperties(const Face& face, T& to)
 {
   to.setFaceId(face.getId())
+    .setPriority(face.getPriority())
     .setRemoteUri(face.getRemoteUri().toString())
     .setLocalUri(face.getLocalUri().toString())
     .setFaceScope(face.getScope())
     .setFacePersistency(face.getPersistency())
     .setLinkType(face.getLinkType());
-
-  if (face.hasPriority()) {
-    to.setPriority(face.getPriority());
-  }
 
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
   if (linkService != nullptr) {
@@ -450,8 +442,7 @@ matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face)
   }
 
   if (filter.hasPriority() &&
-      (!face.hasPriority() ||
-      filter.getPriority() != static_cast<InterestPriority>(face.getPriority()))) {
+      filter.getPriority() != face.getPriority()) {
     return false;
   }
 

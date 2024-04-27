@@ -63,12 +63,12 @@ std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<Face>& flh)
 {
   const Face& face = flh.obj;
-  os << "[id=" << face.getId();
-  if (face.hasPriority()) {
-    os << ",priority=" << face.getPriority();
-  }
-  os << ",local=" << face.getLocalUri() <<
-        ",remote=" << face.getRemoteUri() << "] ";
+  os << "[id=" << face.getId()
+     << ",priority=" << face.getPriority()
+     << ",local=" << face.getLocalUri()
+     << ",remote=" << face.getRemoteUri()
+     << "]";
+
   return os;
 }
 

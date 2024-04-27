@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_SUITE(TestFaceModule)
 BOOST_FIXTURE_TEST_SUITE(ListCommand, ExecuteCommandFixture)
 
 const std::string NONQUERY_OUTPUT =
-  "faceid=134 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
+  "faceid=134 priority=0 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
     " congestion={base-marking-interval=12345ms default-threshold=54321B} mtu=1024"
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
     " flags={non-local permanent multi-access}\n"
@@ -174,6 +174,7 @@ BOOST_FIXTURE_TEST_SUITE(ShowCommand, ExecuteCommandFixture)
 
 const std::string NORMAL_ALL_CONGESTION_OUTPUT = std::string(R"TEXT(
     faceid=256
+  priority=0
     remote=udp4://84.67.35.111:6363
      local=udp4://79.91.49.215:6363
 congestion={base-marking-interval=123ms default-threshold=10000B}
@@ -220,6 +221,7 @@ BOOST_AUTO_TEST_CASE(NormalAllCongestionParams)
 
 const std::string NORMAL_INTERVAL_CONGESTION_OUTPUT = std::string(R"TEXT(
     faceid=256
+  priority=0
     remote=udp4://84.67.35.111:6363
      local=udp4://79.91.49.215:6363
 congestion={base-marking-interval=123ms}
@@ -265,6 +267,7 @@ BOOST_AUTO_TEST_CASE(NormalIntervalCongestionParams)
 
 const std::string NORMAL_THRESHOLD_CONGESTION_OUTPUT = std::string(R"TEXT(
     faceid=256
+  priority=0
     remote=udp4://84.67.35.111:6363
      local=udp4://79.91.49.215:6363
 congestion={default-threshold=10000B}
@@ -310,6 +313,7 @@ BOOST_AUTO_TEST_CASE(NormalThresholdCongestionParams)
 
 const std::string NORMAL_NO_CONGESTION_OUTPUT = std::string(R"TEXT(
     faceid=256
+  priority=0
     remote=udp4://84.67.35.111:6363
      local=udp4://79.91.49.215:6363
        mtu=6000
@@ -387,6 +391,7 @@ protected:
     MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
     ControlParameters body;
     body.setFaceId(1172)
+        .setPriority(0)
         .setUri("udp4://100.77.30.65:6363")
         .setLocalUri("udp4://68.62.26.57:24087")
         .setFacePersistency(persistency)
@@ -418,6 +423,7 @@ BOOST_AUTO_TEST_CASE(Creating)
 
     ControlParameters resp;
     resp.setFaceId(2130)
+        .setPriority(0)
         .setUri("udp4://159.242.33.78:6363")
         .setLocalUri("udp4://179.63.153.45:28835")
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
@@ -427,7 +433,7 @@ BOOST_AUTO_TEST_CASE(Creating)
 
   this->execute("face create udp://159.242.33.78");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-created id=2130 local=udp4://179.63.153.45:28835 "
+  BOOST_CHECK(out.is_equal("face-created id=2130 priority=0 local=udp4://179.63.153.45:28835 "
                            "remote=udp4://159.242.33.78:6363 persistency=persistent "
                            "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
@@ -500,6 +506,7 @@ BOOST_AUTO_TEST_CASE(ChangingMtu)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(4000)
         .setFlags(0);
@@ -509,7 +516,7 @@ BOOST_AUTO_TEST_CASE(ChangingMtu)
   this->execute("face create udp://100.77.30.65 mtu 4000");
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
@@ -535,6 +542,7 @@ BOOST_AUTO_TEST_CASE(AutoMtu)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(ndn::MAX_NDN_PACKET_SIZE)
         .setFlags(0);
@@ -544,7 +552,7 @@ BOOST_AUTO_TEST_CASE(AutoMtu)
   this->execute("face create udp://100.77.30.65 mtu auto");
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off mtu=8800\n"));
   BOOST_CHECK(err.is_empty());
@@ -569,6 +577,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(1024)
         .setFlags(0);
@@ -578,7 +587,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off mtu=1024\n"));
   BOOST_CHECK(err.is_empty());
@@ -604,6 +613,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencySameMtu)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(8800)
         .setFlags(0);
@@ -613,7 +623,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencySameMtu)
   this->execute("face create udp://100.77.30.65 mtu 8800");
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off mtu=8800\n"));
   BOOST_CHECK(err.is_empty());
@@ -628,7 +638,7 @@ BOOST_AUTO_TEST_CASE(NotDowngradingPersistency)
 
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-exists id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=permanent "
                            "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
@@ -643,7 +653,7 @@ BOOST_AUTO_TEST_CASE(SamePersistency)
 
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-exists id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
@@ -667,6 +677,7 @@ BOOST_AUTO_TEST_CASE(EnablingReliability)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(4000)
         .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
@@ -675,7 +686,7 @@ BOOST_AUTO_TEST_CASE(EnablingReliability)
 
   this->execute("face create udp://100.77.30.65 reliability on");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=on congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
@@ -699,6 +710,7 @@ BOOST_AUTO_TEST_CASE(DisablingReliability)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(4000)
         .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false, false);
@@ -707,7 +719,7 @@ BOOST_AUTO_TEST_CASE(DisablingReliability)
 
   this->execute("face create udp://100.77.30.65 reliability off");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
@@ -733,6 +745,7 @@ BOOST_AUTO_TEST_CASE(EnablingCongestionMarking)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setBaseCongestionMarkingInterval(100_ms)
         .setDefaultCongestionThreshold(65536)
@@ -743,7 +756,7 @@ BOOST_AUTO_TEST_CASE(EnablingCongestionMarking)
 
   this->execute("face create udp://100.77.30.65 congestion-marking on");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=on "
                            "congestion-marking-interval=100ms default-congestion-threshold=65536B "
@@ -771,6 +784,7 @@ BOOST_AUTO_TEST_CASE(DisablingCongestionMarking)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setBaseCongestionMarkingInterval(100_ms)
         .setDefaultCongestionThreshold(65536)
@@ -781,7 +795,7 @@ BOOST_AUTO_TEST_CASE(DisablingCongestionMarking)
 
   this->execute("face create udp://100.77.30.65 congestion-marking off");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off "
                            "congestion-marking-interval=100ms default-congestion-threshold=65536B "
@@ -810,6 +824,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencyChangeMtu)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(4000)
         .setFlags(0);
@@ -819,7 +834,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencyChangeMtu)
   this->execute("face create udp://100.77.30.65 mtu 4000");
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=off congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
@@ -847,6 +862,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencyChangeMtuAndFlags)
 
     ControlParameters resp;
     resp.setFaceId(1172)
+        .setPriority(0)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setMtu(4000)
         .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
@@ -856,7 +872,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistencyChangeMtuAndFlags)
   this->execute("face create udp://100.77.30.65 mtu 4000 reliability on");
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+  BOOST_CHECK(out.is_equal("face-updated id=1172 priority=0 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
                            "reliability=on congestion-marking=off mtu=4000\n"));
   BOOST_CHECK(err.is_empty());
@@ -1073,6 +1089,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
     </face>
     <face>
       <faceId>745</faceId>
+      <priority>0</priority>
       <remoteUri>fd://75</remoteUri>
       <localUri>unix:///var/run/nfd.sock</localUri>
       <faceScope>local</faceScope>
@@ -1113,7 +1130,7 @@ const std::string STATUS_TEXT =
   "  faceid=134 priority=2 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
     " flags={non-local permanent multi-access}\n"
-  "  faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
+  "  faceid=745 priority=0 remote=fd://75 local=unix:///var/run/nfd.sock"
     " congestion={base-marking-interval=100ms default-threshold=65536B} mtu=8800"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
     " flags={local on-demand point-to-point local-fields lp-reliability congestion-marking}\n";

@@ -287,6 +287,7 @@ BOOST_AUTO_TEST_CASE(FaceNotExistFaceUri)
 
       ControlParameters resp = req;
       resp.setFaceId(255);
+      resp.setPriority(0);
       resp.setLocalUri("udp4://32.121.182.82:50000");
       resp.setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
       resp.setBaseCongestionMarkingInterval(100_ms);
@@ -317,7 +318,7 @@ BOOST_AUTO_TEST_CASE(FaceNotExistFaceUri)
 
   this->execute("route add /634jfAfdf udp4://202.83.168.28:6363 "
                 "origin 17591 cost 702 capture expires 727411987");
-  BOOST_CHECK(out.is_equal("face-created id=255 local=udp4://32.121.182.82:50000 "
+  BOOST_CHECK(out.is_equal("face-created id=255 priority=0 local=udp4://32.121.182.82:50000 "
                            "remote=udp4://202.83.168.28:6363 persistency=persistent "
                            "reliability=off congestion-marking=off "
                            "congestion-marking-interval=100ms default-congestion-threshold=65536B "

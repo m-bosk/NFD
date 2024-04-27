@@ -141,8 +141,9 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
      (wouldViolateScope(inFace, interest, outFace)))
     return false;
 
-  // Ensure the priority of the face matches the interest's priority, when interest has priority
-  if (interest.getPriority() && outFace.hasPriority() && outFace.getPriority() != interest.getPriority())
+  // non-local face priority must match interest priority
+  if (outFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
+      outFace.getPriority() != interest.getPriority())
     return false;
 
   if (wantUnused) {
