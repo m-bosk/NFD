@@ -290,6 +290,14 @@ FaceManager::updateFace(const Interest& interest,
   ControlParameters response;
   bool areParamsValid = true;
 
+  if (parameters.hasPriority() &&
+      face->getPriority() != parameters.getPriority() &&
+      !face->getTransport()->canChangePriority()) {
+      NFD_LOG_TRACE("cannot change face priority");
+      areParamsValid = false;
+      response.setPriority(parameters.getPriority());
+  }
+
   if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       face->getScope() != ndn::nfd::FACE_SCOPE_LOCAL) {

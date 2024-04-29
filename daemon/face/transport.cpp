@@ -127,6 +127,12 @@ Transport::setMtu(ssize_t mtu) noexcept
 }
 
 bool
+Transport::canChangePriority() const noexcept
+{
+  return false;
+}
+
+bool
 Transport::canChangePersistencyTo(ndn::nfd::FacePersistency newPersistency) const
 {
   // not changing, or setting initial persistency in subclass constructor
