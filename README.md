@@ -1,3 +1,9 @@
+**This fork contains modifications enabling long-lived interests.** It serves as supporting material for publication:
+
+Marcin Bosk, Jörg Ott: Towards Domain-Speciﬁc Time-Sensitive Information-Centric Networking Architecture. To apprear at the [TENSOR Workshop](https://networking.ifip.org/2024/index.php/workshops/tensor) co-located with [IFIP Networking 2024 Conference](https://networking.ifip.org/2024/).
+
+Modifications created by Marcin Bosk on 27 April 2024.
+
 <div align="center">
 
 [<img alt height="65" src="docs/named_data_theme/static/ndn-logo.svg"/>](https://named-data.net/)
