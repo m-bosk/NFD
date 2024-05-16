@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,7 +32,6 @@
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
-#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
@@ -200,19 +199,22 @@ private: // management Dispatcher related
   /** \brief Serve rib/register command.
    */
   void
-  registerEntry(const Interest& interest, ControlParameters parameters,
+  registerEntry(const Name& topPrefix, const Interest& interest,
+                ControlParameters parameters,
                 const ndn::mgmt::CommandContinuation& done);
 
   /** \brief Serve rib/unregister command.
    */
   void
-  unregisterEntry(const Interest& interest, ControlParameters parameters,
+  unregisterEntry(const Name& topPrefix, const Interest& interest,
+                  ControlParameters parameters,
                   const ndn::mgmt::CommandContinuation& done);
 
   /** \brief Serve rib/list dataset.
    */
   void
-  listEntries(ndn::mgmt::StatusDatasetContext& context);
+  listEntries(const Name& topPrefix, const Interest& interest,
+              ndn::mgmt::StatusDatasetContext& context);
 
   void
   setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters);
@@ -252,7 +254,7 @@ private:
   ndn::ValidatorConfig m_paValidator;
   bool m_isLocalhopEnabled;
 
-  ndn::scheduler::ScopedEventId m_activeFaceFetchEvent;
+  scheduler::ScopedEventId m_activeFaceFetchEvent;
 };
 
 std::ostream&

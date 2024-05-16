@@ -1,20 +1,5 @@
-# Backup files
-*~
-*.bak
-*.orig
-*.rej
-
-# Waf build system
-/build/
-.waf-*-*/
-.waf3-*-*/
-.lock-waf*
-
-# Compiled python code
-__pycache__/
-*.py[cod]
-
 # Emacs
+*~
 \#*\#
 /.emacs.desktop
 /.emacs.desktop.lock
@@ -29,6 +14,16 @@ __pycache__/
 .AppleDouble
 .LSOverride
 ._*
+
+# Waf build system
+/build/
+.waf-*-*/
+.waf3-*-*/
+.lock-waf*
+
+# Compiled python code
+__pycache__/
+*.py[cod]
 
 # Other
 /VERSION.info

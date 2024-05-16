@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,9 +60,8 @@ public:
     RANDOMIZE_COUNTERS       = 1 << 3,
   };
 
-  /**
-   * \brief Adds a face to the FaceTable.
-   * \param flags bitwise OR'ed AddFaceFlags
+  /** \brief Adds a face to the FaceTable.
+   *  \param options bitwise OR'ed AddFaceFlags
    */
   shared_ptr<Face>
   addFace(unsigned int flags = 0)
@@ -170,7 +169,6 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
   std::set<FaceId> faceIds;
   for (size_t idx = 0; idx < nEntries; ++idx) {
     ndn::nfd::FaceStatus decodedStatus(content.elements()[idx]);
-    BOOST_TEST_INFO_SCOPE(decodedStatus);
     BOOST_CHECK(m_faceTable.get(decodedStatus.getFaceId()) != nullptr);
     faceIds.insert(decodedStatus.getFaceId());
   }
@@ -320,7 +318,7 @@ BOOST_AUTO_TEST_CASE(ChannelDataset)
   const size_t nEntries = 42;
   std::map<std::string, shared_ptr<TestChannel>> addedChannels;
   for (size_t i = 0; i < nEntries; i++) {
-    auto channel = factory->addChannel("test" + std::to_string(i) + "://");
+    auto channel = factory->addChannel("test" + to_string(i) + "://");
     addedChannels[channel->getUri().toString()] = channel;
   }
 
@@ -332,7 +330,6 @@ BOOST_AUTO_TEST_CASE(ChannelDataset)
 
   for (size_t idx = 0; idx < nEntries; ++idx) {
     ndn::nfd::ChannelStatus decodedStatus(content.elements()[idx]);
-    BOOST_TEST_INFO_SCOPE(decodedStatus);
     BOOST_CHECK(addedChannels.find(decodedStatus.getLocalUri()) != addedChannels.end());
   }
 }

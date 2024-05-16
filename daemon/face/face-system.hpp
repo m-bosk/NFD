@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,14 +26,12 @@
 #ifndef NFD_DAEMON_FACE_FACE_SYSTEM_HPP
 #define NFD_DAEMON_FACE_FACE_SYSTEM_HPP
 
+#include "network-predicate.hpp"
 #include "common/config-file.hpp"
 
 #include <ndn-cxx/net/network-address.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 #include <ndn-cxx/net/network-monitor.hpp>
-
-#include <map>
-#include <set>
 
 namespace nfd {
 
@@ -64,17 +62,15 @@ public:
   [[nodiscard]] std::set<const ProtocolFactory*>
   listProtocolFactories() const;
 
-  /**
-   * \return ProtocolFactory for the specified registered factory id or nullptr if not found.
+  /** \return ProtocolFactory for the specified registered factory id or nullptr if not found.
    */
   ProtocolFactory*
-  getFactoryById(const std::string& id) const;
+  getFactoryById(const std::string& id);
 
-  /**
-   * \return ProtocolFactory for the specified FaceUri scheme or nullptr if not found.
+  /** \return ProtocolFactory for the specified FaceUri scheme or nullptr if not found.
    */
   ProtocolFactory*
-  getFactoryByScheme(const std::string& scheme) const;
+  getFactoryByScheme(const std::string& scheme);
 
   bool
   hasFactoryForScheme(const std::string& scheme) const;

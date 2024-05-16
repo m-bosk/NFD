@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,19 +37,28 @@ using Endpoint = boost::asio::local::stream_protocol::endpoint;
 namespace nfd::face {
 
 /**
- * \brief Class implementing a local channel to create faces.
+ * \brief Class implementing a local channel to create faces
  *
  * Channel can create faces as a response to incoming IPC connections
- * (UnixStreamChannel::listen() needs to be called for that to work).
+ * (UnixStreamChannel::listen needs to be called for that to work).
  */
 class UnixStreamChannel final : public Channel
 {
 public:
   /**
-   * \brief Create a UnixStream channel for the specified \p endpoint.
+   * \brief UnixStreamChannel-related error
+   */
+  class Error : public std::runtime_error
+  {
+  public:
+    using std::runtime_error::runtime_error;
+  };
+
+  /**
+   * \brief Create UnixStream channel for the specified endpoint
    *
-   * To enable the creation of faces upon incoming connections, one needs to
-   * explicitly call listen().
+   * To enable creation of faces upon incoming connections, one
+   * needs to explicitly call UnixStreamChannel::listen method.
    */
   UnixStreamChannel(const unix_stream::Endpoint& endpoint, bool wantCongestionMarking);
 
@@ -58,7 +67,7 @@ public:
   bool
   isListening() const final
   {
-    return m_isListening;
+    return m_acceptor.is_open();
   }
 
   size_t
@@ -68,7 +77,7 @@ public:
   }
 
   /**
-   * \brief Start listening.
+   * \brief Start listening
    *
    * Enable listening on the Unix socket, waiting for incoming connections,
    * and creating a face when a connection is made.
@@ -80,24 +89,29 @@ public:
    *                       returns an error)
    * \param backlog        The maximum length of the queue of pending incoming
    *                       connections
-   * \throw boost::system::system_error
+   * \throw Error
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
          const FaceCreationFailedCallback& onAcceptFailed,
-         int backlog = boost::asio::socket_base::max_listen_connections);
+         int backlog = boost::asio::local::stream_protocol::acceptor::max_connections);
 
 private:
   void
   accept(const FaceCreatedCallback& onFaceCreated,
          const FaceCreationFailedCallback& onAcceptFailed);
 
+  void
+  handleAccept(const boost::system::error_code& error,
+               const FaceCreatedCallback& onFaceCreated,
+               const FaceCreationFailedCallback& onAcceptFailed);
+
 private:
   const unix_stream::Endpoint m_endpoint;
-  const bool m_wantCongestionMarking;
-  bool m_isListening = false;
   boost::asio::local::stream_protocol::acceptor m_acceptor;
-  size_t m_size = 0;
+  boost::asio::local::stream_protocol::socket m_socket;
+  size_t m_size;
+  bool m_wantCongestionMarking;
 };
 
 } // namespace nfd::face

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,6 @@
 #include "internal-transport.hpp"
 #include "common/global.hpp"
 
-#include <boost/asio/post.hpp>
-
 namespace nfd::face {
 
 NFD_LOG_MEMBER_INIT(InternalForwarderTransport, InternalForwarderTransport);
@@ -49,7 +47,7 @@ InternalForwarderTransport::InternalForwarderTransport(const FaceUri& localUri, 
 void
 InternalForwarderTransport::receivePacket(const Block& packet)
 {
-  boost::asio::post(getGlobalIoService(), [this, packet] {
+  getGlobalIoService().post([this, packet] {
     NFD_LOG_FACE_TRACE("Received: " << packet.size() << " bytes");
     receive(packet);
   });
@@ -107,7 +105,7 @@ InternalClientTransport::connectToForwarder(InternalForwarderTransport* forwarde
 void
 InternalClientTransport::receivePacket(const Block& packet)
 {
-  boost::asio::post(getGlobalIoService(), [this, packet] {
+  getGlobalIoService().post([this, packet] {
     NFD_LOG_TRACE("Received: " << packet.size() << " bytes");
     if (m_receiveCallback) {
       m_receiveCallback(packet);

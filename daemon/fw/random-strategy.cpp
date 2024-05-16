@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,8 +42,8 @@ RandomStrategy::RandomStrategy(Forwarder& forwarder, const Name& name)
     NDN_THROW(std::invalid_argument("RandomStrategy does not accept parameters"));
   }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument("RandomStrategy does not support version " +
-                                    std::to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument(
+      "RandomStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
@@ -66,7 +66,8 @@ RandomStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoin
                [&] (const auto& nh) { return isNextHopEligible(ingress.face, interest, nh, pitEntry); });
 
   if (nhs.empty()) {
-    NFD_LOG_INTEREST_FROM(interest, ingress, "no-nexthop");
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " no nexthop");
+
     lp::NackHeader nackHeader;
     nackHeader.setReason(lp::NackReason::NO_ROUTE);
     this->sendNack(nackHeader, ingress.face, pitEntry);

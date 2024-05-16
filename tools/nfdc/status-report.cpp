@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,10 +41,9 @@ operator<<(std::ostream& os, ReportFormat fmt)
 }
 
 uint32_t
-StatusReport::collect(ndn::Face& face, ndn::KeyChain& keyChain, ndn::security::Validator& validator,
-                      const CommandOptions& options)
+StatusReport::collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options)
 {
-  ndn::nfd::Controller controller(face, keyChain, validator);
+  Controller controller(face, keyChain, validator);
   uint32_t errorCode = 0;
 
   for (size_t i = 0; i < sections.size(); ++i) {
@@ -63,7 +62,7 @@ StatusReport::collect(ndn::Face& face, ndn::KeyChain& keyChain, ndn::security::V
 }
 
 void
-StatusReport::processEvents(ndn::Face& face)
+StatusReport::processEvents(Face& face)
 {
   face.processEvents();
 }

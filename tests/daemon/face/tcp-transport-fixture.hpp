@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,12 +46,12 @@ protected:
   void
   startAccept(const tcp::endpoint& remoteEp)
   {
-    BOOST_REQUIRE(!m_acceptor.is_open());
-    m_acceptor.open(remoteEp.protocol());
-    m_acceptor.set_option(boost::asio::socket_base::reuse_address(true));
-    m_acceptor.bind(remoteEp);
-    m_acceptor.listen(1);
-    m_acceptor.async_accept(remoteSocket, [this] (const auto& error) {
+    BOOST_REQUIRE(!acceptor.is_open());
+    acceptor.open(remoteEp.protocol());
+    acceptor.set_option(tcp::acceptor::reuse_address(true));
+    acceptor.bind(remoteEp);
+    acceptor.listen(1);
+    acceptor.async_accept(remoteSocket, [this] (const boost::system::error_code& error) {
       BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
       limitedIo.afterOp();
     });
@@ -60,8 +60,8 @@ protected:
   void
   stopAccept()
   {
-    BOOST_REQUIRE(m_acceptor.is_open());
-    m_acceptor.close();
+    BOOST_REQUIRE(acceptor.is_open());
+    acceptor.close();
   }
 
   void
@@ -72,7 +72,7 @@ protected:
     startAccept(remoteEp);
 
     tcp::socket sock(g_io);
-    sock.async_connect(remoteEp, [this] (const auto& error) {
+    sock.async_connect(remoteEp, [this] (const boost::system::error_code& error) {
       BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
       limitedIo.afterOp();
     });
@@ -89,10 +89,10 @@ protected:
       scope = ndn::nfd::FACE_SCOPE_NON_LOCAL;
     }
 
-    m_face = make_unique<Face>(make_unique<DummyLinkService>(),
-                               make_unique<TcpTransport>(std::move(sock), persistency, scope));
-    transport = static_cast<TcpTransport*>(m_face->getTransport());
-    receivedPackets = &static_cast<DummyLinkService*>(m_face->getLinkService())->receivedPackets;
+    face = make_unique<Face>(make_unique<DummyLinkService>(),
+                             make_unique<TcpTransport>(std::move(sock), persistency, scope));
+    transport = static_cast<TcpTransport*>(face->getTransport());
+    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
@@ -117,8 +117,8 @@ protected:
   std::vector<RxPacket>* receivedPackets = nullptr;
 
 private:
-  tcp::acceptor m_acceptor{g_io};
-  unique_ptr<Face> m_face;
+  tcp::acceptor acceptor{g_io};
+  unique_ptr<Face> face;
 };
 
 } // namespace nfd::tests

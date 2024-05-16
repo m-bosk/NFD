@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,6 @@
  */
 
 #include "execute-command.hpp"
-#include "core/common.hpp"
 
 namespace nfd::tools::nfdc {
 
@@ -38,10 +37,10 @@ ndn::nfd::CommandOptions
 ExecuteContext::makeCommandOptions() const
 {
   return ndn::nfd::CommandOptions()
-         .setTimeout(time::duration_cast<time::milliseconds>(this->getTimeout()));
+           .setTimeout(time::duration_cast<time::milliseconds>(this->getTimeout()));
 }
 
-ndn::nfd::CommandFailureCallback
+Controller::CommandFailCallback
 ExecuteContext::makeCommandFailureHandler(const std::string& commandName)
 {
   return [=] (const ControlResponse& resp) {
@@ -50,7 +49,7 @@ ExecuteContext::makeCommandFailureHandler(const std::string& commandName)
   };
 }
 
-ndn::nfd::DatasetFailureCallback
+Controller::DatasetFailCallback
 ExecuteContext::makeDatasetFailureHandler(const std::string& datasetName)
 {
   return [=] (uint32_t code, const std::string& reason) {

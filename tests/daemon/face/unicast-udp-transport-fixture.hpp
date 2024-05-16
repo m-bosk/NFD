@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,10 +53,10 @@ protected:
 
     remoteConnect(address);
 
-    m_face = make_unique<Face>(make_unique<DummyLinkService>(),
-                               make_unique<UnicastUdpTransport>(std::move(sock), persistency, 3_s));
-    transport = static_cast<UnicastUdpTransport*>(m_face->getTransport());
-    receivedPackets = &static_cast<DummyLinkService*>(m_face->getLinkService())->receivedPackets;
+    face = make_unique<Face>(make_unique<DummyLinkService>(),
+                             make_unique<UnicastUdpTransport>(std::move(sock), persistency, 3_s));
+    transport = static_cast<UnicastUdpTransport*>(face->getTransport());
+    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), face::TransportState::UP);
   }
@@ -66,7 +66,7 @@ protected:
   {
     udp::endpoint remoteEp(address, 7070);
     remoteSocket.open(remoteEp.protocol());
-    remoteSocket.set_option(boost::asio::socket_base::reuse_address(true));
+    remoteSocket.set_option(udp::socket::reuse_address(true));
     remoteSocket.bind(remoteEp);
     remoteSocket.connect(localEp);
   }
@@ -75,7 +75,7 @@ protected:
   remoteRead(std::vector<uint8_t>& buf, bool needToCheck = true)
   {
     remoteSocket.async_receive(boost::asio::buffer(buf),
-      [this, needToCheck] (const auto& error, size_t) {
+      [this, needToCheck] (const boost::system::error_code& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
@@ -104,7 +104,7 @@ protected:
   std::vector<RxPacket>* receivedPackets = nullptr;
 
 private:
-  unique_ptr<Face> m_face;
+  unique_ptr<Face> face;
 };
 
 } // namespace nfd::tests

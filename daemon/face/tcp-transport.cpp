@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,6 @@
 #include "tcp-transport.hpp"
 #include "common/global.hpp"
 
-#include <boost/asio/defer.hpp>
-
 #if defined(__linux__)
 #include <linux/sockios.h>
 #include <sys/ioctl.h>
@@ -35,11 +33,9 @@
 
 namespace nfd::face {
 
-namespace ip = boost::asio::ip;
+NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>, TcpTransport);
 
-NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<ip::tcp>, TcpTransport);
-
-TcpTransport::TcpTransport(ip::tcp::socket&& socket,
+TcpTransport::TcpTransport(protocol::socket&& socket,
                            ndn::nfd::FacePersistency persistency,
                            ndn::nfd::FaceScope faceScope)
   : StreamTransport(std::move(socket))
@@ -109,7 +105,7 @@ TcpTransport::handleError(const boost::system::error_code& error)
     m_socket.cancel(ec);
 
     // do this asynchronously because there could be some callbacks still pending
-    boost::asio::defer(getGlobalIoService(), [this] { reconnect(); });
+    getGlobalIoService().post([this] { reconnect(); });
   }
   else {
     StreamTransport::handleError(error);
@@ -132,7 +128,13 @@ TcpTransport::reconnect()
   BOOST_ASSERT(getState() == TransportState::DOWN);
 
   // recreate the socket
-  m_socket = ip::tcp::socket(m_socket.get_executor());
+  m_socket = protocol::socket(
+#if BOOST_VERSION >= 107000
+                              m_socket.get_executor()
+#else
+                              m_socket.get_io_service()
+#endif // BOOST_VERSION >= 107000
+                              );
   this->resetReceiveBuffer();
   this->resetSendQueue();
 
@@ -179,7 +181,7 @@ TcpTransport::handleReconnectTimeout()
                MAX_RECONNECT_DELAY);
 
   // do this asynchronously because there could be some callbacks still pending
-  boost::asio::defer(getGlobalIoService(), [this] { reconnect(); });
+  getGlobalIoService().post([this] { reconnect(); });
 }
 
 void

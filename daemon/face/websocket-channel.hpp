@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,6 @@
 #include "channel.hpp"
 #include "websocketpp.hpp"
 
-#include <map>
-
 namespace nfd::websocket {
 using Endpoint = boost::asio::ip::tcp::endpoint;
 } // namespace nfd::websocket
@@ -38,16 +36,17 @@ using Endpoint = boost::asio::ip::tcp::endpoint;
 namespace nfd::face {
 
 /**
- * \brief Class implementing a WebSocket-based channel to create faces.
+ * \brief Class implementing WebSocket-based channel to create faces
  */
 class WebSocketChannel final : public Channel
 {
 public:
   /**
-   * \brief Create a WebSocket channel for the given \p localEndpoint.
+   * \brief Create WebSocket channel for the local endpoint
    *
-   * To enable the creation of faces upon incoming connections, one needs to
-   * explicitly call listen(). The created channel is bound to \p localEndpoint.
+   * To enable creation of faces upon incoming connections,
+   * one needs to explicitly call WebSocketChannel::listen method.
+   * The created channel is bound to the localEndpoint.
    */
   explicit
   WebSocketChannel(const websocket::Endpoint& localEndpoint);
@@ -66,7 +65,7 @@ public:
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
-   *        and create faces when remote host makes a connection.
+   *        and create faces when remote host makes a connection
    *
    * \param onFaceCreated Callback to notify successful creation of a face
    */
@@ -74,14 +73,12 @@ public:
   listen(const FaceCreatedCallback& onFaceCreated);
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  /**
-   * \pre listen() has not been invoked.
+  /** \pre listen hasn't been invoked
    */
   void
   setPingInterval(time::milliseconds interval);
 
-  /**
-   * \pre listen() has not been invoked.
+  /** \pre listen hasn't been invoked
    */
   void
   setPongTimeout(time::milliseconds timeout);

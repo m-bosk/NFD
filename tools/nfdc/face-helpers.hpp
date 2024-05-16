@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,18 +26,10 @@
 #ifndef NFD_TOOLS_NFDC_FACE_HELPERS_HPP
 #define NFD_TOOLS_NFDC_FACE_HELPERS_HPP
 
-#include "core/common.hpp"
 #include "execute-command.hpp"
-
-#include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
-#include <ndn-cxx/mgmt/nfd/face-status.hpp>
-#include <ndn-cxx/net/face-uri.hpp>
-
-#include <set>
 
 namespace nfd::tools::nfdc {
 
-using ndn::FaceUri;
 using ndn::nfd::FaceQueryFilter;
 using ndn::nfd::FaceStatus;
 
@@ -80,7 +72,7 @@ public:
   /** \brief Find face by FaceId or FaceUri.
    *  \param faceIdOrUri either a FaceId (uint64_t) or a FaceUri
    *  \param allowMulti effective only if \p faceIdOrUri contains a FaceUri
-   *  \throw std::bad_any_cast faceIdOrUri is neither uint64_t nor FaceUri
+   *  \throw ndn::bad_any_cast faceIdOrUri is neither uint64_t nor FaceUri
    */
   Code
   execute(const std::any& faceIdOrUri, bool allowMulti = false);

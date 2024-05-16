@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,7 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
-#include <ndn-cxx/mgmt/nfd/status-dataset.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
@@ -116,7 +116,7 @@ public:
   {
     if (hasAllowedSchema(uri)) {
       boost::system::error_code ec;
-      auto address = boost::asio::ip::make_address(uri.getHost(), ec);
+      auto address = boost::asio::ip::address::from_string(uri.getHost(), ec);
 
       if (!address.is_multicast()) {
         // register all-face prefixes
@@ -173,7 +173,7 @@ public:
     m_faceMonitor.onNotification.connect([this] (const auto& notif) { onNotification(notif); });
     m_faceMonitor.start();
 
-    boost::asio::signal_set signalSet(m_face.getIoContext(), SIGINT, SIGTERM);
+    boost::asio::signal_set signalSet(m_face.getIoService(), SIGINT, SIGTERM);
     signalSet.async_wait([this] (auto&&...) { m_face.shutdown(); });
 
     m_face.processEvents();

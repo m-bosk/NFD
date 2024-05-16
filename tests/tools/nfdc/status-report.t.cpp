@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ module2
 class DummyModule : public Module
 {
 public:
-  DummyModule(const std::string& moduleName, boost::asio::io_context& io)
+  DummyModule(const std::string& moduleName, boost::asio::io_service& io)
     : m_moduleName(moduleName)
     , m_scheduler(io)
     , m_res(0)
@@ -60,15 +60,15 @@ public:
   void
   setResult(uint32_t res, time::nanoseconds delay)
   {
-    BOOST_ASSERT(delay > 0_ns);
+    BOOST_ASSERT(delay > time::nanoseconds::zero());
     m_res = res;
     m_delay = delay;
   }
 
   void
-  fetchStatus(ndn::nfd::Controller&,
+  fetchStatus(Controller&,
               const std::function<void()>& onSuccess,
-              const ndn::nfd::DatasetFailureCallback& onFailure,
+              const Controller::DatasetFailCallback& onFailure,
               const CommandOptions&) final
   {
     ++nFetchStatusCalls;
@@ -77,7 +77,7 @@ public:
         onSuccess();
       }
       else {
-        onFailure(m_res, m_moduleName + " fails with code " + std::to_string(m_res));
+        onFailure(m_res, m_moduleName + " fails with code " + to_string(m_res));
       }
     });
   }
@@ -99,7 +99,7 @@ public:
 
 private:
   std::string m_moduleName;
-  ndn::Scheduler m_scheduler;
+  Scheduler m_scheduler;
   uint32_t m_res;
   time::nanoseconds m_delay;
 };
@@ -149,9 +149,9 @@ protected:
   }
 
 protected:
-  ndn::DummyClientFace face;
+  ndn::util::DummyClientFace face;
   ValidatorNull validator;
-  ndn::nfd::Controller controller;
+  Controller controller;
   StatusReportTester report;
 
   uint32_t res;

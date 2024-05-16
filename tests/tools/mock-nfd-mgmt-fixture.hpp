@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,6 @@
 #include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
-#include <boost/asio/defer.hpp>
 #include <boost/concept/assert.hpp>
 
 namespace nfd::tests {
@@ -53,7 +52,7 @@ protected:
   {
     face.onSendInterest.connect([this] (const Interest& interest) {
       if (processInterest) {
-        boost::asio::defer(m_io, [=] { processInterest(interest); });
+        m_io.post([=] { processInterest(interest); });
       }
     });
   }
@@ -173,7 +172,7 @@ private:
    *  \param name dataset prefix without version and segment
    *  \param contentArgs passed to Data::setContent
    */
-  template<typename... ContentArgs>
+  template<typename ...ContentArgs>
   void
   sendDatasetReply(Name name, ContentArgs&&... contentArgs)
   {
@@ -205,7 +204,7 @@ private:
   }
 
 protected:
-  ndn::DummyClientFace face;
+  ndn::util::DummyClientFace face;
   std::function<void(const Interest&)> processInterest;
 };
 
@@ -220,8 +219,8 @@ protected:
   [&interest] { \
     auto params = parseCommand(interest, (expectedPrefix)); \
     BOOST_REQUIRE_MESSAGE(params.has_value(), "Interest " << interest.getName() << \
-                          " must match the prefix " << (expectedPrefix)); \
+                          " does not match command prefix " << (expectedPrefix)); \
     return *params; \
-  }()
+  } ()
 
 #endif // NFD_TESTS_TOOLS_MOCK_NFD_MGMT_FIXTURE_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -91,7 +91,7 @@ private:
     }
 
     if (m_faceUris.empty()) {
-      NDN_THROW_NO_STACK(std::runtime_error("No supported FaceUri pairs found in config file"));
+      NDN_THROW(std::runtime_error("No supported FaceUri pairs found in config file"));
     }
   }
 
@@ -121,7 +121,7 @@ private:
     }
 
     // create the right face
-    auto addr = boost::asio::ip::make_address(uriR.getHost());
+    auto addr = boost::asio::ip::address::from_string(uriR.getHost());
     auto port = boost::lexical_cast<uint16_t>(uriR.getPort());
     if (uriR.getScheme() == "tcp4") {
       m_tcpChannel.connect(tcp::Endpoint(addr, port), {},
@@ -162,8 +162,7 @@ private:
   [[noreturn]] static void
   onFaceCreationFailed(uint32_t status, const std::string& reason)
   {
-    NDN_THROW_NO_STACK(std::runtime_error("Failed to create face: [" +
-                                          std::to_string(status) + "] " + reason));
+    NDN_THROW(std::runtime_error("Failed to create face: [" + to_string(status) + "] " + reason));
   }
 
 private:
@@ -178,7 +177,7 @@ private:
 int
 main(int argc, char** argv)
 {
-#ifndef NDEBUG
+#ifdef _DEBUG
   std::cerr << "Benchmark compiled in debug mode is unreliable, please compile in release mode.\n";
 #endif
 

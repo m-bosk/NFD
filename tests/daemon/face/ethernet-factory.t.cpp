@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,52 +39,39 @@ class EthernetFactoryFixture : public EthernetFixture
                              , public FaceSystemFactoryFixture<EthernetFactory>
 {
 protected:
+  EthernetFactoryFixture()
+  {
+    this->copyRealNetifsToNetmon();
+  }
+
   std::set<std::string>
   listUrisOfAvailableNetifs() const
   {
     std::set<std::string> uris;
     std::transform(netifs.begin(), netifs.end(), std::inserter(uris, uris.end()),
-                   [] (const auto& netif) { return FaceUri::fromDev(netif->getName()).toString(); });
+                   [] (const auto& netif) {
+                     return FaceUri::fromDev(netif->getName()).toString();
+                   });
     return uris;
   }
 
   std::vector<const Face*>
   listEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return listFacesByScheme("ether", linkType);
+    return this->listFacesByScheme("ether", linkType);
   }
 
-  shared_ptr<ndn::net::NetworkInterface>
-  makeFakeNetif()
+  size_t
+  countEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    static int counter = 0;
-    ++counter;
-
-    auto netif = netmon->makeNetworkInterface();
-    netif->setIndex(1000 + counter);
-    netif->setName("ethdummy" + std::to_string(counter));
-    netif->setType(ndn::net::InterfaceType::ETHERNET);
-    netif->setFlags(IFF_MULTICAST | IFF_UP);
-    netif->setState(ndn::net::InterfaceState::RUNNING);
-    netif->setMtu(1500);
-    netif->setEthernetAddress(ethernet::Address{0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e});
-    return netif;
-  }
-};
-
-class EthernetFactoryFixtureWithRealNetifs : public EthernetFactoryFixture
-{
-protected:
-  EthernetFactoryFixtureWithRealNetifs()
-  {
-    copyRealNetifsToNetmon();
+    return this->listEtherMcastFaces(linkType).size();
   }
 };
 
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_AUTO_TEST_SUITE(TestEthernetFactory)
+BOOST_FIXTURE_TEST_SUITE(TestEthernetFactory, EthernetFactoryFixture)
 
-BOOST_FIXTURE_TEST_SUITE(ProcessConfig, EthernetFactoryFixtureWithRealNetifs)
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
 BOOST_AUTO_TEST_CASE(Defaults)
 {
@@ -94,6 +81,9 @@ BOOST_AUTO_TEST_CASE(Defaults)
     face_system
     {
       ether
+      {
+        mcast no
+      }
     }
   )CONFIG";
 
@@ -104,10 +94,10 @@ BOOST_AUTO_TEST_CASE(Defaults)
   auto channels = factory.getChannels();
   BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
                           [] (const auto& ch) { return ch->isListening(); }));
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), netifs.size());
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(DisableListenAndMcast)
+BOOST_AUTO_TEST_CASE(DisableListen)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
@@ -130,11 +120,13 @@ BOOST_AUTO_TEST_CASE(DisableListenAndMcast)
   auto channels = factory.getChannels();
   BOOST_CHECK(std::none_of(channels.begin(), channels.end(),
                            [] (const auto& ch) { return ch->isListening(); }));
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(McastNormal)
 {
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+
   const std::string CONFIG = R"CONFIG(
     face_system
     {
@@ -158,9 +150,8 @@ BOOST_AUTO_TEST_CASE(McastNormal)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto etherMcastFaces = this->listEtherMcastFaces();
-  BOOST_CHECK_EQUAL(etherMcastFaces.size(), netifs.size());
-  for (const auto* face : etherMcastFaces) {
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
+  for (const auto& face : this->listEtherMcastFaces()) {
     BOOST_REQUIRE(face->getChannel().lock());
     // not universal, but for Ethernet, local URI of a mcast face matches URI of the associated channel
     BOOST_CHECK_EQUAL(face->getLocalUri(), face->getChannel().lock()->getUri());
@@ -191,17 +182,17 @@ BOOST_AUTO_TEST_CASE(EnableDisableMcast)
   )CONFIG";
 
   parseConfig(CONFIG_WITHOUT_MCAST, false);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
   parseConfig(CONFIG_WITH_MCAST, false);
   g_io.poll();
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), netifs.size());
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
 
   parseConfig(CONFIG_WITHOUT_MCAST, false);
   g_io.poll();
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(McastAdHoc)
@@ -214,14 +205,15 @@ BOOST_AUTO_TEST_CASE(McastAdHoc)
       ether
       {
         listen no
+        mcast yes
         mcast_ad_hoc yes
       }
     }
   )CONFIG";
 
   parseConfig(CONFIG, false);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces(ndn::nfd::LINK_TYPE_MULTI_ACCESS).size(), 0);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces(ndn::nfd::LINK_TYPE_AD_HOC).size(), netifs.size());
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(ndn::nfd::LINK_TYPE_MULTI_ACCESS), 0);
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(ndn::nfd::LINK_TYPE_AD_HOC), netifs.size());
 }
 
 BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
@@ -248,7 +240,6 @@ BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
   )CONFIG";
 
   parseConfig(CONFIG1, false);
-  g_io.poll();
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
   BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
@@ -312,9 +303,10 @@ BOOST_AUTO_TEST_CASE(Blacklist)
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_CHECK_EQUAL(etherMcastFaces.size(), netifs.size() - 1);
   BOOST_CHECK(std::none_of(etherMcastFaces.begin(), etherMcastFaces.end(),
-                           [uri = FaceUri::fromDev(ifname)] (const auto* face) {
-                             return face->getLocalUri() == uri;
-                           }));
+    [ifname] (const nfd::Face* face) {
+      return face->getLocalUri() == FaceUri::fromDev(ifname);
+    }
+  ));
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -328,7 +320,7 @@ BOOST_AUTO_TEST_CASE(Omitted)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(BadListen)
@@ -443,33 +435,31 @@ BOOST_AUTO_TEST_CASE(UnknownOption)
 
 BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
-BOOST_FIXTURE_TEST_CASE(GetChannels, EthernetFactoryFixtureWithRealNetifs)
+BOOST_AUTO_TEST_CASE(GetChannels)
 {
   BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
-
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
   factory.createChannel(netifs.front(), 1_min);
   checkChannelListEqual(factory, {FaceUri::fromDev(netifs.front()->getName()).toString()});
 }
 
-BOOST_FIXTURE_TEST_CASE(CreateChannel, EthernetFactoryFixtureWithRealNetifs)
+BOOST_AUTO_TEST_CASE(CreateChannel)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
   auto channel1 = factory.createChannel(netifs.front(), 1_min);
   auto channel1a = factory.createChannel(netifs.front(), 5_min);
   BOOST_CHECK_EQUAL(channel1, channel1a);
-  checkChannelListEqual(factory, {FaceUri::fromDev(netifs.front()->getName()).toString()});
+  BOOST_CHECK_EQUAL(channel1->getUri().toString(), "dev://" + netifs.front()->getName());
 
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(2);
 
   auto channel2 = factory.createChannel(netifs.back(), 1_min);
   BOOST_CHECK_NE(channel1, channel2);
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
 }
 
-BOOST_FIXTURE_TEST_CASE(CreateFace, EthernetFactoryFixtureWithRealNetifs)
+BOOST_AUTO_TEST_CASE(CreateFace)
 {
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
@@ -517,7 +507,7 @@ BOOST_FIXTURE_TEST_CASE(CreateFace, EthernetFactoryFixtureWithRealNetifs)
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
-BOOST_FIXTURE_TEST_CASE(CreateFaceInvalidRequest, EthernetFactoryFixture)
+BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 {
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
@@ -553,118 +543,7 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceInvalidRequest, EthernetFactoryFixture)
              {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, true, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Local fields can only be enabled on faces with local scope"});
-
-  createFace(factory,
-             FaceUri("ether://[00:00:5e:00:53:5e]"),
-             FaceUri("dev://eth0"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 42, false, false, false},
-             {CreateFaceExpectedResult::FAILURE, 406,
-              "Override MTU cannot be less than 64"});
 }
-
-BOOST_FIXTURE_TEST_SUITE(OnInterfaceAdded, EthernetFactoryFixture)
-
-BOOST_AUTO_TEST_CASE(EligibleForChannelAndMcast)
-{
-  parseConfig(R"CONFIG(
-    face_system
-    {
-      ether
-    }
-  )CONFIG", false);
-  g_io.poll();
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-
-  // Add a fake interface that satisfies both unicast and multicast criteria.
-  netmon->addInterface(this->makeFakeNetif());
-  // The channel fails to listen because the interface is fake.
-  // However, it's not removed from the channel list (issue #4400).
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
-  // Multicast face creation fails because the interface is fake.
-  // This test is to ensure that the factory handles failures gracefully.
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-
-  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-
-  // Now add a real interface: both channel and multicast face should be created successfully.
-  netmon->addInterface(std::const_pointer_cast<ndn::net::NetworkInterface>(netifs.front()));
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
-  auto etherMcastFaces = this->listEtherMcastFaces();
-  BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), 1);
-  BOOST_CHECK_EQUAL(etherMcastFaces.front()->getLocalUri(), FaceUri::fromDev(netifs.front()->getName()));
-}
-
-BOOST_AUTO_TEST_CASE(EligibleForChannelOnly)
-{
-  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-
-  parseConfig(R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        listen no
-      }
-    }
-  )CONFIG", false);
-  g_io.poll();
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-
-  // Add an interface that satisfies only the unicast criteria.
-  auto netif = std::const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
-  netif->setFlags(netif->getFlags() & ~IFF_MULTICAST);
-  netmon->addInterface(netif);
-  checkChannelListEqual(factory, {FaceUri::fromDev(netifs.front()->getName()).toString()});
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(Ineligible)
-{
-  parseConfig(R"CONFIG(
-    face_system
-    {
-      ether
-    }
-  )CONFIG", false);
-  g_io.poll();
-
-  // netif is down
-  auto netif = this->makeFakeNetif();
-  netif->setFlags(netif->getFlags() & ~IFF_UP);
-  netmon->addInterface(netif);
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-
-  // incompatible netif type
-  netif = this->makeFakeNetif();
-  netif->setType(ndn::net::InterfaceType::LOOPBACK);
-  netmon->addInterface(netif);
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-
-  // invalid Ethernet address
-  netif = this->makeFakeNetif();
-  netif->setEthernetAddress(ethernet::Address{});
-  netmon->addInterface(netif);
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(Disabled)
-{
-  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-
-  parseConfig("", false);
-  g_io.poll();
-
-  netmon->addInterface(std::const_pointer_cast<ndn::net::NetworkInterface>(netifs.front()));
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
-  BOOST_CHECK_EQUAL(this->listEtherMcastFaces().size(), 0);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // OnInterfaceAdded
 
 BOOST_AUTO_TEST_SUITE_END() // TestEthernetFactory
 BOOST_AUTO_TEST_SUITE_END() // Face

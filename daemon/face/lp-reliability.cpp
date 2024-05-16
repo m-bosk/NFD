@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,9 @@
  */
 
 #include "lp-reliability.hpp"
-#include "common/global.hpp"
 #include "generic-link-service.hpp"
 #include "transport.hpp"
-
-#include <ndn-cxx/lp/fields.hpp>
-
-#include <set>
+#include "common/global.hpp"
 
 namespace nfd::face {
 
@@ -56,6 +52,12 @@ LpReliability::setOptions(const Options& options)
   }
 
   m_options = options;
+}
+
+const GenericLinkService*
+LpReliability::getLinkService() const
+{
+  return m_linkService;
 }
 
 void
@@ -394,6 +396,21 @@ LpReliability::deleteUnackedFrag(UnackedFrags::iterator fragIt)
   else if (m_unackedFrags.empty()) {
     m_firstUnackedFrag = m_unackedFrags.end();
   }
+}
+
+LpReliability::UnackedFrag::UnackedFrag(lp::Packet pkt)
+  : pkt(std::move(pkt))
+  , sendTime(time::steady_clock::now())
+  , retxCount(0)
+  , nGreaterSeqAcks(0)
+{
+}
+
+LpReliability::NetPkt::NetPkt(lp::Packet&& pkt, bool isInterest)
+  : pkt(std::move(pkt))
+  , isInterest(isInterest)
+  , didRetx(false)
+{
 }
 
 std::ostream&

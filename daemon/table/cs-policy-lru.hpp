@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,13 +43,15 @@ using Queue = boost::multi_index_container<
                 >
               >;
 
-/**
- * \brief Least-Recently-Used (LRU) replacement policy.
+/** \brief Least-Recently-Used (LRU) replacement policy.
  */
 class LruPolicy final : public Policy
 {
 public:
   LruPolicy();
+
+public:
+  static const std::string POLICY_NAME;
 
 private:
   void
@@ -67,14 +69,11 @@ private:
   void
   evictEntries() final;
 
-  /**
-   * \brief Moves an entry to the end of queue.
+private:
+  /** \brief Moves an entry to the end of queue.
    */
   void
   insertToQueue(EntryRef i, bool isNewEntry);
-
-public:
-  static constexpr std::string_view POLICY_NAME{"lru"};
 
 private:
   Queue m_queue;

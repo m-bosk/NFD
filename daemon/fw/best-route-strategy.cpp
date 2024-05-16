@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,8 +38,8 @@ BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument("BestRouteStrategy does not support version " +
-                                    std::to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument(
+      "BestRouteStrategy does not support version " + to_string(*parsed.version)));
   }
 
   StrategyParameters params = parseParameters(parsed.parameters);
@@ -61,9 +61,9 @@ void
 BestRouteStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
-  auto suppression = m_retxSuppression->decidePerPitEntry(*pitEntry);
+  RetxSuppressionResult suppression = m_retxSuppression->decidePerPitEntry(*pitEntry);
   if (suppression == RetxSuppressionResult::SUPPRESS) {
-    NFD_LOG_INTEREST_FROM(interest, ingress, "suppressed");
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " suppressed");
     return;
   }
 
@@ -78,7 +78,8 @@ BestRouteStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
     });
 
     if (it == nexthops.end()) {
-      NFD_LOG_INTEREST_FROM(interest, ingress, "new no-nexthop");
+      NFD_LOG_DEBUG(interest << " from=" << ingress << " noNextHop");
+
       lp::NackHeader nackHeader;
       nackHeader.setReason(lp::NackReason::NO_ROUTE);
       this->sendNack(nackHeader, ingress.face, pitEntry);
@@ -87,7 +88,7 @@ BestRouteStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
     }
 
     Face& outFace = it->getFace();
-    NFD_LOG_INTEREST_FROM(interest, ingress, "new to=" << outFace.getId());
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " newPitEntry-to=" << outFace.getId());
     this->sendInterest(interest, outFace, pitEntry);
     return;
   }
@@ -101,19 +102,19 @@ BestRouteStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
   if (it != nexthops.end()) {
     Face& outFace = it->getFace();
     this->sendInterest(interest, outFace, pitEntry);
-    NFD_LOG_INTEREST_FROM(interest, ingress, "retx unused-to=" << outFace.getId());
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-unused-to=" << outFace.getId());
     return;
   }
 
   // find an eligible upstream that is used earliest
   it = findEligibleNextHopWithEarliestOutRecord(ingress.face, interest, nexthops, pitEntry);
   if (it == nexthops.end()) {
-    NFD_LOG_INTEREST_FROM(interest, ingress, "retx no-nexthop");
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmitNoNextHop");
   }
   else {
     Face& outFace = it->getFace();
     this->sendInterest(interest, outFace, pitEntry);
-    NFD_LOG_INTEREST_FROM(interest, ingress, "retx retry-to=" << outFace.getId());
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-retry-to=" << outFace.getId());
   }
 }
 

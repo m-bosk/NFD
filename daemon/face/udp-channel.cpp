@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,9 +33,9 @@
 
 namespace nfd::face {
 
-namespace ip = boost::asio::ip;
-
 NFD_LOG_INIT(UdpChannel);
+
+namespace ip = boost::asio::ip;
 
 UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
                        time::nanoseconds idleTimeout,
@@ -83,7 +83,7 @@ UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
   }
 
   m_socket.open(m_localEndpoint.protocol());
-  m_socket.set_option(boost::asio::socket_base::reuse_address(true));
+  m_socket.set_option(ip::udp::socket::reuse_address(true));
   if (m_localEndpoint.address().is_v6()) {
     m_socket.set_option(ip::v6_only(true));
   }
@@ -97,9 +97,10 @@ void
 UdpChannel::waitForNewPeer(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
-  m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_remoteEndpoint, [=] (auto&&... args) {
-    handleNewPeer(std::forward<decltype(args)>(args)..., onFaceCreated, onReceiveFailed);
-  });
+  m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_remoteEndpoint,
+                              [=] (auto&&... args) {
+                                this->handleNewPeer(std::forward<decltype(args)>(args)..., onFaceCreated, onReceiveFailed);
+                              });
 }
 
 void
@@ -159,7 +160,7 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
 
   // else, create a new face
   ip::udp::socket socket(getGlobalIoService(), m_localEndpoint.protocol());
-  socket.set_option(boost::asio::socket_base::reuse_address(true));
+  socket.set_option(ip::udp::socket::reuse_address(true));
   socket.bind(m_localEndpoint);
   socket.connect(remoteEndpoint);
 

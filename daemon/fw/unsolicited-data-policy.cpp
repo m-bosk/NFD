@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,6 +66,7 @@ UnsolicitedDataPolicy::getPolicyNames()
   return policyNames;
 }
 
+const std::string DropAllUnsolicitedDataPolicy::POLICY_NAME("drop-all");
 NFD_REGISTER_UNSOLICITED_DATA_POLICY(DropAllUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision
@@ -74,6 +75,7 @@ DropAllUnsolicitedDataPolicy::decide(const Face&, const Data&) const
   return UnsolicitedDataDecision::DROP;
 }
 
+const std::string AdmitLocalUnsolicitedDataPolicy::POLICY_NAME("admit-local");
 NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitLocalUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision
@@ -85,6 +87,7 @@ AdmitLocalUnsolicitedDataPolicy::decide(const Face& inFace, const Data&) const
   return UnsolicitedDataDecision::DROP;
 }
 
+const std::string AdmitNetworkUnsolicitedDataPolicy::POLICY_NAME("admit-network");
 NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitNetworkUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision
@@ -96,6 +99,7 @@ AdmitNetworkUnsolicitedDataPolicy::decide(const Face& inFace, const Data&) const
   return UnsolicitedDataDecision::DROP;
 }
 
+const std::string AdmitAllUnsolicitedDataPolicy::POLICY_NAME("admit-all");
 NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitAllUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision

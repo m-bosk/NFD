@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,7 +32,6 @@
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
-#include <boost/mp11/algorithm.hpp>
 #include <boost/property_tree/info_parser.hpp>
 
 namespace nfd::tests {
@@ -186,7 +185,7 @@ private:
       data->setContent(resp.wireEncode());
       m_keyChain.sign(*data, ndn::security::SigningInfo(ndn::security::SigningInfo::SIGNER_TYPE_SHA256));
 
-      boost::asio::post(m_face.getIoContext(), [this, data] { m_face.receive(*data); });
+      m_face.getIoService().post([this, data] { m_face.receive(*data); });
     };
 
     const Name commandPrefix("/localhost/nfd/fib/add-nexthop");
@@ -304,21 +303,21 @@ public:
   }
 };
 
-template<typename Fixture, typename Format>
+template<typename Fixture, auto Format>
 struct FixtureWithFormat : public Fixture
 {
-  static constexpr ndn::security::SignedInterestFormat signedInterestFmt = Format::value;
+  static constexpr ndn::security::SignedInterestFormat signedInterestFmt = Format;
 };
 
-using AllFixtures = boost::mp11::mp_product<
-  FixtureWithFormat,
-  boost::mp11::mp_list<UnauthorizedRibManagerFixture,
-                       LocalhostAuthorizedRibManagerFixture,
-                       LocalhopAuthorizedRibManagerFixture,
-                       AuthorizedRibManagerFixture>,
-  boost::mp11::mp_list_c<ndn::security::SignedInterestFormat,
-                         ndn::security::SignedInterestFormat::V02,
-                         ndn::security::SignedInterestFormat::V03>
+using AllFixtures = boost::mpl::vector<
+  FixtureWithFormat<UnauthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<UnauthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
+  FixtureWithFormat<LocalhostAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<LocalhostAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
+  FixtureWithFormat<LocalhopAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<LocalhopAuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>,
+  FixtureWithFormat<AuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V02>,
+  FixtureWithFormat<AuthorizedRibManagerFixture, ndn::security::SignedInterestFormat::V03>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
@@ -447,7 +446,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
   BOOST_CHECK_EQUAL(checkResponse(0, command.getName(),
                                   ControlResponse(414, "Route prefix cannot exceed " +
-                                                  std::to_string(Fib::getMaxDepth()) + " components")),
+                                                  to_string(Fib::getMaxDepth()) + " components")),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(m_fibUpdater.updates.size(), 0);
@@ -487,7 +486,6 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
   std::vector<ndn::nfd::RibEntry> receivedRecords, expectedRecords;
   for (size_t idx = 0; idx < nEntries; ++idx) {
     ndn::nfd::RibEntry decodedEntry(content.elements()[idx]);
-    BOOST_TEST_INFO_SCOPE(decodedEntry);
     receivedRecords.push_back(decodedEntry);
     actualPrefixes.erase(decodedEntry.getName());
 

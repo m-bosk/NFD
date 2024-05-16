@@ -9,7 +9,7 @@ Synopsis
 Description
 -----------
 
-``nfd-status-http-server`` is a daemon that enables the retrieval of NFD's status over HTTP.
+``nfd-status-http-server`` is a daemon that enables retrieval of NFD status via HTTP protocol.
 
 Options
 -------
@@ -21,7 +21,7 @@ Options
   HTTP server IP address (default is 127.0.0.1).
 
 ``-p <PORT>``
-  HTTP server port number (default is 6380).
+  HTTP server port number (default is 8080).
 
 ``-r``
   Enable HTTP robots to crawl (disabled by default).
@@ -32,10 +32,10 @@ Options
 Examples
 --------
 
-Start NFD's HTTP status server on all IPv4 interfaces, port 80 (requires root)::
+Enable NFD HTTP status server on all IPv4 interfaces::
 
-    nfd-status-http-server -a 0.0.0.0 -p 80
+    nfd-status-http-server -p 80 -a 0.0.0.0
 
-Start NFD's HTTP status server on all IPv6 interfaces, port 8000::
+Enable NFD HTTP status server on all IPv6 interfaces::
 
-    nfd-status-http-server -a :: -p 8000
+    nfd-status-http-server -p 80 -a ::

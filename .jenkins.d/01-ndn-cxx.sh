@@ -35,16 +35,16 @@ sudo rm -f /usr/local/lib{,64}/pkgconfig/libndn-cxx.pc
 
 pushd ndn-cxx >/dev/null
 
-./waf --color=yes configure
+./waf --color=yes configure --without-osx-keychain
 ./waf --color=yes build
 sudo ./waf --color=yes install
 
 popd >/dev/null
 popd >/dev/null
 
+if [[ $ID_LIKE == *fedora* ]]; then
+    sudo tee /etc/ld.so.conf.d/ndn.conf >/dev/null <<< /usr/local/lib64
+fi
 if [[ $ID_LIKE == *linux* ]]; then
-    if [[ $(uname -m) == x86_64 && -d /usr/lib64 ]]; then
-        sudo tee /etc/ld.so.conf.d/ndn.conf >/dev/null <<< /usr/local/lib64
-    fi
     sudo ldconfig
 fi

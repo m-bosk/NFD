@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,6 @@
 #include "strategy.hpp"
 #include "asf-measurements.hpp"
 #include "asf-probing-module.hpp"
-#include "process-nack-traits.hpp"
 #include "retx-suppression-exponential.hpp"
 
 namespace nfd::fw {
@@ -43,7 +42,7 @@ namespace asf {
  *      with a Smart Forwarding Plane in NDN", NDN Technical Report NDN-0042, 2016.
  *      https://named-data.net/publications/techreports/ndn-0042-1-asf/
  */
-class AsfStrategy : public Strategy, public ProcessNackTraits<AsfStrategy>
+class AsfStrategy : public Strategy
 {
 public:
   explicit
@@ -86,21 +85,12 @@ private:
   sendNoRouteNack(Face& face, const shared_ptr<pit::Entry>& pitEntry);
 
 private:
-  AsfMeasurements m_measurements{getMeasurements()};
+  AsfMeasurements m_measurements;
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  struct FaceStatsForwardingCompare
-  {
-    bool
-    operator()(const FaceStats& lhs, const FaceStats& rhs) const noexcept;
-  };
-  using FaceStatsForwardingSet = std::set<FaceStats, FaceStatsForwardingCompare>;
-
   std::unique_ptr<RetxSuppressionExponential> m_retxSuppression;
-  ProbingModule m_probing{m_measurements};
+  ProbingModule m_probing;
   size_t m_nMaxTimeouts = 3;
-
-  friend ProcessNackTraits<AsfStrategy>;
 };
 
 } // namespace asf

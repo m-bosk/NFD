@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,18 +33,16 @@
 #include <boost/asio/posix/stream_descriptor.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
-#include <map>
-
 namespace nfd::face {
 
 /**
- * \brief Class implementing an Ethernet-based channel to create faces.
+ * \brief Class implementing Ethernet-based channel to create faces
  */
 class EthernetChannel final : public Channel
 {
 public:
   /**
-   * \brief EthernetChannel-related error.
+   * \brief EthernetChannel-related error
    */
   class Error : public std::runtime_error
   {
@@ -53,10 +51,10 @@ public:
   };
 
   /**
-   * \brief Create an Ethernet channel on the given \p localEndpoint (network interface).
+   * \brief Create an Ethernet channel on the given \p localEndpoint (network interface)
    *
-   * To enable the creation of faces upon incoming connections, one needs to
-   * explicitly call listen().
+   * To enable creation of faces upon incoming connections,
+   * one needs to explicitly call EthernetChannel::listen method.
    */
   EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> localEndpoint,
                   time::nanoseconds idleTimeout);
@@ -74,7 +72,7 @@ public:
   }
 
   /**
-   * \brief Create a unicast Ethernet face toward \p remoteEndpoint.
+   * \brief Create a unicast Ethernet face toward \p remoteEndpoint
    */
   void
   connect(const ethernet::Address& remoteEndpoint,
@@ -83,7 +81,7 @@ public:
           const FaceCreationFailedCallback& onConnectFailed);
 
   /**
-   * \brief Start listening.
+   * \brief Start listening
    *
    * Enable listening on the local endpoint, waiting for incoming frames,
    * and creating a face when a frame is received from a new remote host.
@@ -123,15 +121,15 @@ private:
 
 private:
   shared_ptr<const ndn::net::NetworkInterface> m_localEndpoint;
-  bool m_isListening = false;
+  bool m_isListening;
   boost::asio::posix::stream_descriptor m_socket;
   PcapHelper m_pcap;
   std::map<ethernet::Address, shared_ptr<Face>> m_channelFaces;
   const time::nanoseconds m_idleFaceTimeout; ///< Timeout for automatic closure of idle on-demand faces
 
-#ifndef NDEBUG
-  /// Number of frames dropped by the kernel, as reported by libpcap
-  size_t m_nDropped = 0;
+#ifdef _DEBUG
+  /// number of frames dropped by the kernel, as reported by libpcap
+  size_t m_nDropped;
 #endif
 };
 

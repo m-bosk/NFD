@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,15 +32,13 @@
 
 #include <array>
 
-#include <boost/asio/defer.hpp>
-
 namespace nfd::face {
 
 struct Unicast {};
 struct Multicast {};
 
 /**
- * \brief Implements a Transport for datagram-based protocols.
+ * \brief Implements Transport for datagram-based protocols.
  *
  * \tparam Protocol A datagram-based protocol in Boost.Asio
  * \tparam Addressing The addressing mode, either Unicast or Multicast
@@ -52,10 +50,9 @@ public:
   using protocol = Protocol;
   using addressing = Addressing;
 
-  /**
-   * \brief Construct datagram transport.
+  /** \brief Construct datagram transport.
    *
-   * \param socket Protocol-specific socket for the created transport
+   *  \param socket Protocol-specific socket for the created transport
    */
   explicit
   DatagramTransport(typename protocol::socket&& socket);
@@ -99,13 +96,14 @@ protected:
 
 private:
   std::array<uint8_t, ndn::MAX_NDN_PACKET_SIZE> m_receiveBuffer;
-  bool m_hasRecentlyReceived = false;
+  bool m_hasRecentlyReceived;
 };
 
 
 template<class T, class U>
 DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
+  , m_hasRecentlyReceived(false)
 {
   boost::asio::socket_base::send_buffer_size sendBufferSizeOption;
   boost::system::error_code error;
@@ -151,7 +149,7 @@ DatagramTransport<T, U>::doClose()
 
   // Ensure that the Transport stays alive at least until
   // all pending handlers are dispatched
-  boost::asio::defer(getGlobalIoService(), [this] {
+  getGlobalIoService().post([this] {
     this->setState(TransportState::CLOSED);
   });
 }

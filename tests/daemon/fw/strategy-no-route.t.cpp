@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,7 +39,7 @@
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 
-#include <boost/mp11/list.hpp>
+#include <boost/mpl/vector.hpp>
 
 namespace nfd::tests {
 
@@ -78,16 +78,25 @@ public:
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyNoRoute)
 
-template<typename S>
-struct EmptyNextHopList
+template<typename S, typename C>
+class Test
 {
-  static Name
+public:
+  using Strategy = S;
+  using Case = C;
+};
+
+template<typename S>
+class EmptyNextHopList
+{
+public:
+  Name
   getInterestName()
   {
     return "/P";
   }
 
-  static void
+  void
   insertFibEntry(StrategyNoRouteFixture<S>* fixture)
   {
     fixture->fib.insert(Name());
@@ -95,15 +104,16 @@ struct EmptyNextHopList
 };
 
 template<typename S>
-struct NextHopIsDownstream
+class NextHopIsDownstream
 {
-  static Name
+public:
+  Name
   getInterestName()
   {
     return "/P";
   }
 
-  static void
+  void
   insertFibEntry(StrategyNoRouteFixture<S>* fixture)
   {
     fib::Entry* entry = fixture->fib.insert(Name()).first;
@@ -112,15 +122,16 @@ struct NextHopIsDownstream
 };
 
 template<typename S>
-struct NextHopViolatesScope
+class NextHopViolatesScope
 {
-  static Name
+public:
+  Name
   getInterestName()
   {
     return "/localhop/P";
   }
 
-  static void
+  void
   insertFibEntry(StrategyNoRouteFixture<S>* fixture)
   {
     fib::Entry* entry = fixture->fib.insert("/localhop").first;
@@ -129,27 +140,27 @@ struct NextHopViolatesScope
   }
 };
 
-using Tests = boost::mp11::mp_list<
-  boost::mp11::mp_list<AsfStrategy, EmptyNextHopList<AsfStrategy>>,
-  boost::mp11::mp_list<AsfStrategy, NextHopIsDownstream<AsfStrategy>>,
-  boost::mp11::mp_list<AsfStrategy, NextHopViolatesScope<AsfStrategy>>,
+using Tests = boost::mpl::vector<
+  Test<AsfStrategy, EmptyNextHopList<AsfStrategy>>,
+  Test<AsfStrategy, NextHopIsDownstream<AsfStrategy>>,
+  Test<AsfStrategy, NextHopViolatesScope<AsfStrategy>>,
 
-  boost::mp11::mp_list<BestRouteStrategy, EmptyNextHopList<BestRouteStrategy>>,
-  boost::mp11::mp_list<BestRouteStrategy, NextHopIsDownstream<BestRouteStrategy>>,
-  boost::mp11::mp_list<BestRouteStrategy, NextHopViolatesScope<BestRouteStrategy>>,
+  Test<BestRouteStrategy, EmptyNextHopList<BestRouteStrategy>>,
+  Test<BestRouteStrategy, NextHopIsDownstream<BestRouteStrategy>>,
+  Test<BestRouteStrategy, NextHopViolatesScope<BestRouteStrategy>>,
 
-  boost::mp11::mp_list<RandomStrategy, EmptyNextHopList<RandomStrategy>>,
-  boost::mp11::mp_list<RandomStrategy, NextHopIsDownstream<RandomStrategy>>,
-  boost::mp11::mp_list<RandomStrategy, NextHopViolatesScope<RandomStrategy>>
+  Test<RandomStrategy, EmptyNextHopList<RandomStrategy>>,
+  Test<RandomStrategy, NextHopIsDownstream<RandomStrategy>>,
+  Test<RandomStrategy, NextHopViolatesScope<RandomStrategy>>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest,
-                                 T, Tests, StrategyNoRouteFixture<boost::mp11::mp_first<T>>)
+                                 T, Tests, StrategyNoRouteFixture<typename T::Strategy>)
 {
-  using Scenario = boost::mp11::mp_second<T>;
-  Scenario::insertFibEntry(this);
+  typename T::Case scenario;
+  scenario.insertFibEntry(this);
 
-  auto interest = makeInterest(Scenario::getInterestName());
+  auto interest = makeInterest(scenario.getInterestName());
   auto pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, *interest);
 

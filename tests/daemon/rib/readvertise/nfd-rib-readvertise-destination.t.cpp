@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,8 +32,6 @@
 #include <ndn-cxx/security/signing-info.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
-#include <boost/mp11/list.hpp>
-
 namespace nfd::tests {
 
 using namespace nfd::rib;
@@ -57,7 +55,7 @@ public:
   uint32_t nFailureCallbacks;
 
 protected:
-  ndn::DummyClientFace face;
+  ndn::util::DummyClientFace face;
   ndn::nfd::Controller controller;
   Rib rib;
   NfdRibReadvertiseDestination dest;
@@ -65,7 +63,7 @@ protected:
   std::function<void(const std::string&)> failureCallback;
 };
 
-BOOST_AUTO_TEST_SUITE(Rib)
+BOOST_AUTO_TEST_SUITE(Readvertise)
 BOOST_FIXTURE_TEST_SUITE(TestNfdRibReadvertiseDestination, NfdRibReadvertiseDestinationFixture)
 
 class AdvertiseSuccessScenario
@@ -115,7 +113,7 @@ public:
   }
 };
 
-using AdvertiseScenarios = boost::mp11::mp_list<AdvertiseSuccessScenario, AdvertiseFailureScenario>;
+using AdvertiseScenarios = boost::mpl::vector<AdvertiseSuccessScenario, AdvertiseFailureScenario>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
 {
@@ -193,7 +191,7 @@ public:
   }
 };
 
-using WithdrawScenarios = boost::mp11::mp_list<WithdrawSuccessScenario, WithdrawFailureScenario>;
+using WithdrawScenarios = boost::mpl::vector<WithdrawSuccessScenario, WithdrawFailureScenario>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
 {
@@ -249,6 +247,6 @@ BOOST_AUTO_TEST_CASE(DestinationAvailability)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestNfdRibReadvertiseDestination
-BOOST_AUTO_TEST_SUITE_END() // Rib
+BOOST_AUTO_TEST_SUITE_END() // Readvertise
 
 } // namespace nfd::tests

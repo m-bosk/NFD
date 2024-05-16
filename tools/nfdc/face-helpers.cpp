@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,6 @@
 #include "face-helpers.hpp"
 #include "format-helpers.hpp"
 
-#include <ndn-cxx/mgmt/nfd/status-dataset.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
 namespace nfd::tools::nfdc {
@@ -133,7 +132,7 @@ FindFace::query()
   };
   auto failureCb = [this] (uint32_t code, const auto& reason) {
     m_res = Code::ERROR;
-    m_errorReason = "Error " + std::to_string(code) + " when querying face: " + reason;
+    m_errorReason = "Error " + to_string(code) + " when querying face: " + reason;
   };
 
   if (m_filter.empty()) {
@@ -186,7 +185,7 @@ canonize(ExecuteContext& ctx, const FaceUri& uri)
   uri.canonize(
     [&result] (const auto& canonicalUri) { result = canonicalUri; },
     [&error] (const auto& errorReason) { error = errorReason; },
-    ctx.face.getIoContext(), ctx.getTimeout());
+    ctx.face.getIoService(), ctx.getTimeout());
   ctx.face.processEvents();
 
   return {result, error};

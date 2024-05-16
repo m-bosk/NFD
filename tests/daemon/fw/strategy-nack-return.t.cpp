@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,6 @@
  */
 
 // Strategies implementing recommended Nack processing procedure, sorted alphabetically.
-#include "fw/asf-strategy.hpp"
 #include "fw/best-route-strategy.hpp"
 #include "fw/random-strategy.hpp"
 
@@ -36,7 +35,7 @@
 #include "topology-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-#include <boost/mp11/list.hpp>
+#include <boost/mpl/vector.hpp>
 
 namespace nfd::tests {
 
@@ -84,8 +83,7 @@ public:
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyNackReturn)
 
-using Strategies = boost::mp11::mp_list<
-  AsfStrategy,
+using Strategies = boost::mpl::vector<
   BestRouteStrategy,
   RandomStrategy
 >;
@@ -107,7 +105,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
   pitEntry->insertOrUpdateOutRecord(*this->face3, *interest1);
 
   lp::Nack nack3 = makeNack(*interest1, lp::NackReason::CONGESTION);
-  pitEntry->findOutRecord(*this->face3)->setIncomingNack(nack3);
+  pitEntry->getOutRecord(*this->face3)->setIncomingNack(nack3);
 
   auto f = [&] {
     this->strategy.afterReceiveNack(nack3, FaceEndpoint(*this->face3), pitEntry);
@@ -145,13 +143,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
   pitEntry->insertOrUpdateOutRecord(*this->face4, *interest1);
 
   lp::Nack nack3 = makeNack(*interest1, lp::NackReason::CONGESTION);
-  pitEntry->findOutRecord(*this->face3)->setIncomingNack(nack3);
+  pitEntry->getOutRecord(*this->face3)->setIncomingNack(nack3);
   this->strategy.afterReceiveNack(nack3, FaceEndpoint(*this->face3), pitEntry);
 
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.size(), 0); // don't send Nack until all upstreams have Nacked
 
   lp::Nack nack4 = makeNack(*interest1, lp::NackReason::CONGESTION);
-  pitEntry->findOutRecord(*this->face4)->setIncomingNack(nack4);
+  pitEntry->getOutRecord(*this->face4)->setIncomingNack(nack4);
 
   auto f = [&] {
     this->strategy.afterReceiveNack(nack4, FaceEndpoint(*this->face4), pitEntry);
@@ -187,7 +185,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
   this->advanceClocks(200_ms); // face3 has timed out
 
   lp::Nack nack4 = makeNack(*interest2, lp::NackReason::CONGESTION);
-  pitEntry->findOutRecord(*this->face4)->setIncomingNack(nack4);
+  pitEntry->getOutRecord(*this->face4)->setIncomingNack(nack4);
   this->strategy.afterReceiveNack(nack4, FaceEndpoint(*this->face4), pitEntry);
 
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.size(), 0);
@@ -284,7 +282,7 @@ struct NackReasonCombination
   static constexpr lp::NackReason expectedResult{R};
 };
 
-using NackReasonCombinations = boost::mp11::mp_list<
+using NackReasonCombinations = boost::mpl::vector<
   NackReasonCombination<lp::NackReason::CONGESTION, lp::NackReason::CONGESTION, lp::NackReason::CONGESTION>,
   NackReasonCombination<lp::NackReason::CONGESTION, lp::NackReason::DUPLICATE, lp::NackReason::CONGESTION>,
   NackReasonCombination<lp::NackReason::CONGESTION, lp::NackReason::NO_ROUTE, lp::NackReason::CONGESTION>,
@@ -320,13 +318,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons,
   pitEntry->insertOrUpdateOutRecord(*face4, *interest1);
 
   lp::Nack nack3 = makeNack(*interest1, Combination::firstReason);
-  pitEntry->findOutRecord(*face3)->setIncomingNack(nack3);
+  pitEntry->getOutRecord(*face3)->setIncomingNack(nack3);
   strategy.afterReceiveNack(nack3, FaceEndpoint(*face3), pitEntry);
 
   BOOST_CHECK_EQUAL(strategy.sendNackHistory.size(), 0);
 
   lp::Nack nack4 = makeNack(*interest1, Combination::secondReason);
-  pitEntry->findOutRecord(*face4)->setIncomingNack(nack4);
+  pitEntry->getOutRecord(*face4)->setIncomingNack(nack4);
   strategy.afterReceiveNack(nack4, FaceEndpoint(*face4), pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);

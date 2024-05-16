@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,8 +32,6 @@
 #include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/rib/create-route.hpp"
-
-#include <boost/asio/defer.hpp>
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -82,7 +80,7 @@ private:
              uint32_t nTimeouts)
   {
     updates.push_back(update);
-    boost::asio::defer(getGlobalIoService(), [=] {
+    getGlobalIoService().post([=] {
       if (mockSuccess) {
         onUpdateSuccess(update, onSuccess, onFailure);
       }
@@ -167,7 +165,7 @@ public:
   }
 
 public:
-  ndn::DummyClientFace face;
+  ndn::util::DummyClientFace face;
   ndn::nfd::Controller controller;
 
   rib::Rib rib;

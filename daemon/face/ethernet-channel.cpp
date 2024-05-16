@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,9 +40,13 @@ NFD_LOG_INIT(EthernetChannel);
 EthernetChannel::EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> localEndpoint,
                                  time::nanoseconds idleTimeout)
   : m_localEndpoint(std::move(localEndpoint))
+  , m_isListening(false)
   , m_socket(getGlobalIoService())
   , m_pcap(m_localEndpoint->getName())
   , m_idleFaceTimeout(idleTimeout)
+#ifdef _DEBUG
+  , m_nDropped(0)
+#endif
 {
   setUri(FaceUri::fromDev(m_localEndpoint->getName()));
   NFD_LOG_CHAN_INFO("Creating channel");
@@ -97,9 +101,8 @@ void
 EthernetChannel::asyncRead(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
-  m_socket.async_wait(boost::asio::posix::stream_descriptor::wait_read, [=] (const auto& e) {
-    handleRead(e, onFaceCreated, onReceiveFailed);
-  });
+  m_socket.async_read_some(boost::asio::null_buffers(),
+                           [=] (const auto& e, auto) { this->handleRead(e, onFaceCreated, onReceiveFailed); });
 }
 
 void
@@ -133,7 +136,7 @@ EthernetChannel::handleRead(const boost::system::error_code& error,
     }
   }
 
-#ifndef NDEBUG
+#ifdef _DEBUG
   size_t nDropped = m_pcap.getNDropped();
   if (nDropped - m_nDropped > 0)
     NFD_LOG_CHAN_DEBUG("Detected " << nDropped - m_nDropped << " dropped frame(s)");
@@ -217,7 +220,7 @@ EthernetChannel::updateFilter()
   if (!isListening())
     return;
 
-  std::string filter = "(ether proto " + std::to_string(ethernet::ETHERTYPE_NDN) +
+  std::string filter = "(ether proto " + to_string(ethernet::ETHERTYPE_NDN) +
                        ") && (ether dst " + m_localEndpoint->getEthernetAddress().toString() + ")";
   for (const auto& addr : m_channelFaces | boost::adaptors::map_keys) {
     filter += " && (not ether src " + addr.toString() + ")";

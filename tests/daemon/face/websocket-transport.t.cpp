@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,7 @@
 
 #include "websocket-transport-fixture.hpp"
 
-#include <boost/mp11/list.hpp>
+#include <boost/mpl/vector.hpp>
 
 namespace nfd::tests {
 
@@ -34,7 +34,7 @@ using namespace nfd::face;
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestWebSocketTransport, IpTransportFixture<WebSocketTransportFixture>)
 
-using WebSocketTransportFixtures = boost::mp11::mp_list<
+using WebSocketTransportFixtures = boost::mpl::vector<
   GENERATE_IP_TRANSPORT_FIXTURE_INSTANTIATIONS(WebSocketTransportFixture)
 >;
 
@@ -55,7 +55,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticProperties, T, WebSocketTransportFixtures
   BOOST_CHECK_EQUAL(this->transport->getSendQueueCapacity(), QUEUE_UNSUPPORTED);
 }
 
-using StaticPropertiesV4MappedFixtures = boost::mp11::mp_list<
+using StaticPropertiesV4MappedFixtures = boost::mpl::vector<
   IpTransportFixture<WebSocketTransportFixture, AddressFamily::V4, AddressScope::Loopback>,
   IpTransportFixture<WebSocketTransportFixture, AddressFamily::V4, AddressScope::Global>
 >;
@@ -63,7 +63,7 @@ using StaticPropertiesV4MappedFixtures = boost::mp11::mp_list<
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticPropertiesV4Mapped, T, StaticPropertiesV4MappedFixtures, T)
 {
   TRANSPORT_TEST_CHECK_PRECONDITIONS();
-  auto mappedAddr = ip::make_address_v6(ip::v4_mapped, this->address.to_v4());
+  auto mappedAddr = ip::address_v6::v4_mapped(this->address.to_v4());
   BOOST_REQUIRE(mappedAddr.is_v4_mapped());
   WebSocketTransportFixture::initialize(this->interface, mappedAddr);
 

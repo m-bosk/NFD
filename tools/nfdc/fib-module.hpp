@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,24 +28,21 @@
 
 #include "module.hpp"
 
-#include <ndn-cxx/mgmt/nfd/fib-entry.hpp>
-
 namespace nfd::tools::nfdc {
 
 using ndn::nfd::FibEntry;
 using ndn::nfd::NextHopRecord;
 
-/**
- * \brief Provides access to NFD FIB management.
- * \sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
+/** \brief Provides access to NFD FIB management.
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
-class FibModule : public Module, boost::noncopyable
+class FibModule : public Module, noncopyable
 {
 public:
   void
-  fetchStatus(ndn::nfd::Controller& controller,
+  fetchStatus(Controller& controller,
               const std::function<void()>& onSuccess,
-              const ndn::nfd::DatasetFailureCallback& onFailure,
+              const Controller::DatasetFailCallback& onFailure,
               const CommandOptions& options) override;
 
   void

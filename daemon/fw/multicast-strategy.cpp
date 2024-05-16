@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,8 +38,8 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument("MulticastStrategy does not support version " +
-                                    std::to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument(
+      "MulticastStrategy does not support version " + to_string(*parsed.version)));
   }
 
   StrategyParameters params = parseParameters(parsed.parameters);
@@ -53,7 +53,7 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 MulticastStrategy::getStrategyName()
 {
-  static const auto strategyName = Name("/localhost/nfd/strategy/multicast").appendVersion(5);
+  static const auto strategyName = Name("/localhost/nfd/strategy/multicast").appendVersion(4);
   return strategyName;
 }
 
@@ -67,9 +67,10 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
   for (const auto& nexthop : nexthops) {
     Face& outFace = nexthop.getFace();
 
-    auto suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
+    RetxSuppressionResult suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
+
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
-      NFD_LOG_INTEREST_FROM(interest, ingress, "to=" << outFace.getId() << " suppressed");
+      NFD_LOG_DEBUG(interest << " from=" << ingress << " to=" << outFace.getId() << " suppressed");
       continue;
     }
 
@@ -77,7 +78,7 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
       continue;
     }
 
-    NFD_LOG_INTEREST_FROM(interest, ingress, "to=" << outFace.getId());
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
     auto* sentOutRecord = this->sendInterest(interest, outFace, pitEntry);
     if (sentOutRecord && suppressResult == RetxSuppressionResult::FORWARD) {
       m_retxSuppression->incrementIntervalForOutRecord(*sentOutRecord);
@@ -92,15 +93,16 @@ MulticastStrategy::afterNewNextHop(const fib::NextHop& nextHop,
   // no need to check for suppression, as it is a new next hop
 
   auto nextHopFaceId = nextHop.getFace().getId();
-  const auto& interest = pitEntry->getInterest();
+  auto& interest = pitEntry->getInterest();
 
   // try to find an incoming face record that doesn't violate scope restrictions
   for (const auto& r : pitEntry->getInRecords()) {
     auto& inFace = r.getFace();
-
     if (isNextHopEligible(inFace, interest, nextHop, pitEntry)) {
-      NFD_LOG_INTEREST_FROM(interest, inFace.getId(), "new-nexthop to=" << nextHopFaceId);
+
+      NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " pitEntry-to=" << nextHopFaceId);
       this->sendInterest(interest, nextHop.getFace(), pitEntry);
+
       break; // just one eligible incoming face record is enough
     }
   }

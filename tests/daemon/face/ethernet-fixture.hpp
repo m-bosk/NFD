@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,11 +27,16 @@
 #define NFD_TESTS_DAEMON_FACE_ETHERNET_FIXTURE_HPP
 
 #include "face/multicast-ethernet-transport.hpp"
+#include "face/unicast-ethernet-transport.hpp"
 
-#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/limited-io.hpp"
 #include "test-netif.hpp"
 
 namespace nfd::tests {
+
+using face::EthernetTransport;
+using face::MulticastEthernetTransport;
+using face::UnicastEthernetTransport;
 
 /**
  * \brief Fixture providing a list of EthernetTransport-capable network interfaces.
@@ -42,25 +47,79 @@ protected:
   EthernetFixture()
   {
     for (const auto& netif : collectNetworkInterfaces()) {
-      // similar filtering logic to EthernetFactory::applyMcastConfigToNetif()
-      if (netif->isUp() && !netif->isLoopback() && netif->canMulticast()) {
+      if (!netif->isLoopback() && netif->isUp()) {
         try {
-          face::MulticastEthernetTransport t(*netif, ethernet::getBroadcastAddress(),
-                                             ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+          MulticastEthernetTransport t(*netif, ethernet::getBroadcastAddress(),
+                                       ndn::nfd::LINK_TYPE_MULTI_ACCESS);
           netifs.push_back(netif);
         }
-        catch (const face::EthernetTransport::Error&) {
+        catch (const EthernetTransport::Error&) {
           // ignore
         }
       }
     }
+    if (!netifs.empty()) {
+      defaultNetif = const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
+    }
+  }
+
+  /** \brief Returns the first running interface.
+   */
+  shared_ptr<ndn::net::NetworkInterface>
+  getRunningNetif() const
+  {
+    for (const auto& netif : netifs) {
+      if (netif->getState() == ndn::net::InterfaceState::RUNNING) {
+        return const_pointer_cast<ndn::net::NetworkInterface>(netif);
+      }
+    }
+
+    return nullptr;
+  }
+
+  /** \brief Create a UnicastEthernetTransport.
+   */
+  void
+  initializeUnicast(shared_ptr<ndn::net::NetworkInterface> netif = nullptr,
+                    ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                    ethernet::Address remoteAddr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e})
+  {
+    if (!netif) {
+      netif = defaultNetif;
+    }
+
+    localEp = netif->getName();
+    remoteEp = remoteAddr;
+    transport = make_unique<UnicastEthernetTransport>(*netif, remoteEp, persistency, 2_s);
+  }
+
+  /** \brief Create a MulticastEthernetTransport.
+   */
+  void
+  initializeMulticast(shared_ptr<ndn::net::NetworkInterface> netif = nullptr,
+                      ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS,
+                      ethernet::Address mcastGroup = {0x01, 0x00, 0x5e, 0x90, 0x10, 0x5e})
+  {
+    if (!netif) {
+      netif = defaultNetif;
+    }
+
+    localEp = netif->getName();
+    remoteEp = mcastGroup;
+    transport = make_unique<MulticastEthernetTransport>(*netif, remoteEp, linkType);
   }
 
 protected:
-  /**
-   * \brief EthernetTransport-capable network interfaces.
+  LimitedIo limitedIo;
+
+  /** \brief EthernetTransport-capable network interfaces.
    */
   std::vector<shared_ptr<const ndn::net::NetworkInterface>> netifs;
+
+  shared_ptr<ndn::net::NetworkInterface> defaultNetif;
+  unique_ptr<EthernetTransport> transport;
+  std::string localEp;
+  ethernet::Address remoteEp;
 };
 
 } // namespace nfd::tests
@@ -70,6 +129,15 @@ protected:
     if (this->netifs.size() < (n)) { \
       BOOST_WARN_MESSAGE(false, "skipping assertions that require " #n \
                                 " or more EthernetTransport-capable network interfaces"); \
+      return; \
+    } \
+  } while (false)
+
+#define SKIP_IF_NO_RUNNING_ETHERNET_NETIF() \
+  do { \
+    if (!this->getRunningNetif()) { \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require a running " \
+                                "EthernetTransport-capable network interface"); \
       return; \
     } \
   } while (false)

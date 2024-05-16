@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,7 @@
  */
 
 #include "mgmt/fib-manager.hpp"
-#include "table/fib-entry.hpp"
+#include "table/fib-nexthop.hpp"
 
 #include "manager-common-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -178,7 +178,7 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
   receiveInterest(req);
 
   ControlResponse expected(414, "FIB entry prefix cannot exceed " +
-                           std::to_string(Fib::getMaxDepth()) + " components");
+                                ndn::to_string(Fib::getMaxDepth()) + " components");
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expected), CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(checkNextHop(prefix), CheckNextHopResult::NO_FIB_ENTRY);
@@ -421,7 +421,6 @@ BOOST_AUTO_TEST_CASE(FibDataset)
   std::vector<ndn::nfd::FibEntry> receivedRecords, expectedRecords;
   for (size_t idx = 0; idx < nEntries; ++idx) {
     ndn::nfd::FibEntry decodedEntry(content.elements()[idx]);
-    BOOST_TEST_INFO_SCOPE(decodedEntry);
     receivedRecords.push_back(decodedEntry);
     actualPrefixes.erase(decodedEntry.getPrefix());
 

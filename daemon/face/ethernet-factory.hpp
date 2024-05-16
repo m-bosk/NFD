@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,12 +28,10 @@
 
 #include "protocol-factory.hpp"
 #include "ethernet-channel.hpp"
-#include "network-predicate.hpp"
 
 namespace nfd::face {
 
-/**
- * \brief Protocol factory for Ethernet.
+/** \brief Protocol factory for Ethernet.
  */
 class EthernetFactory final : public ProtocolFactory
 {
@@ -50,7 +48,7 @@ public:
    * If this method is called twice with the same endpoint, only one channel
    * will be created. The second call will just return the existing channel.
    *
-   * \return Always a valid pointer to a EthernetChannel object, an exception
+   * \return always a valid pointer to a EthernetChannel object, an exception
    *         is thrown if it cannot be created.
    * \throw PcapHelper::Error channel creation failed
    */
@@ -67,7 +65,7 @@ public:
    * \param localEndpoint local network interface
    * \param group multicast group address
    *
-   * \throw std::runtime_error %Face creation failed
+   * \throw EthernetTransport::Error transport creation fails
    */
   shared_ptr<Face>
   createMulticastFace(const ndn::net::NetworkInterface& localEndpoint,
@@ -86,16 +84,14 @@ private:
   std::vector<shared_ptr<const Channel>>
   doGetChannels() const final;
 
-  /**
-   * \brief Create EthernetChannel on \p netif if requested by \p m_unicastConfig.
-   * \return New or existing channel, or nullptr if no channel should be created.
+  /** \brief Create EthernetChannel on \p netif if requested by \p m_unicastConfig.
+   *  \return new or existing channel, or nullptr if no channel should be created
    */
   shared_ptr<EthernetChannel>
   applyUnicastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif);
 
-  /**
-   * \brief Create Ethernet multicast face on \p netif if requested by \p m_mcastConfig.
-   * \return New or existing face, or nullptr if no face should be created.
+  /** \brief Create Ethernet multicast face on \p netif if requested by \p m_mcastConfig.
+   *  \return new or existing face, or nullptr if no face should be created
    */
   shared_ptr<Face>
   applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif);
@@ -104,8 +100,7 @@ private:
   applyConfig(const FaceSystem::ConfigContext& context);
 
 private:
-  // ifname => channel
-  std::map<std::string, shared_ptr<EthernetChannel>> m_channels;
+  std::map<std::string, shared_ptr<EthernetChannel>> m_channels; ///< ifname => channel
 
   struct UnicastConfig
   {

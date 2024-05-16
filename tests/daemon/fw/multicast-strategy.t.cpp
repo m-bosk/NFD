@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,6 @@
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
-
-#include <boost/mp11/list.hpp>
 
 namespace nfd::tests {
 
@@ -175,7 +173,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
 
   // downstream retransmits frequently, but the strategy should not send Interests
   // more often than DEFAULT_MIN_RETX_INTERVAL
-  ndn::scheduler::EventId retxFrom4Evt;
+  scheduler::EventId retxFrom4Evt;
   size_t nSentLast = strategy.sendInterestHistory.size();
   auto timeSentLast = time::steady_clock::now();
   std::function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
@@ -210,28 +208,8 @@ BOOST_AUTO_TEST_CASE(LoopingInterest)
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
   strategy.afterReceiveInterest(*interest, FaceEndpoint(*face1), pitEntry);
-  BOOST_TEST(strategy.rejectPendingInterestHistory.size() == 0);
-  BOOST_TEST(strategy.sendInterestHistory.size() == 0);
-}
-
-BOOST_AUTO_TEST_CASE(DuplicateInterest)
-{
-  fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fib.addOrUpdateNextHop(fibEntry, *face3, 0);
-
-  auto interest = makeInterest("ndn:/H0D6i5fc");
-
-  // first interest
-  forwarder.onIncomingInterest(*interest, FaceEndpoint(*face1));
-  BOOST_TEST(forwarder.getCounters().nInInterests == 1);
-  BOOST_TEST(strategy.sendInterestHistory.size() == 1);
-
-  // second interest (duplicate, should enter onInterestLoop)
-  forwarder.onIncomingInterest(*interest, FaceEndpoint(*face2));
-  BOOST_TEST(forwarder.getCounters().nInInterests == 2);
-  BOOST_TEST(strategy.sendInterestHistory.size() == 1);
-  BOOST_TEST(strategy.rejectPendingInterestHistory.size() == 0);
-  BOOST_TEST(strategy.sendNackHistory.size() == 0);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(RetxSuppression)
@@ -492,7 +470,7 @@ protected:
   }
 };
 
-using Tests = boost::mp11::mp_list<
+using Tests = boost::mpl::vector<
   BasicNonLocal,
   NewFibLocal,
   InFaceLocal,

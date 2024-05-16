@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,14 +23,12 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "core/common.hpp"
+
 #include "tests/boost-test.hpp"
 
-#include <ndn-cxx/util/exception.hpp>
-
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/path.hpp>
-
-#include <stdexcept>
+#include <boost/filesystem.hpp>
+#include <fstream>
 #include <stdlib.h>
 
 namespace nfd::tests {
@@ -42,16 +40,17 @@ public:
   {
     const char* envHome = ::getenv("HOME");
     if (envHome)
-      m_home.assign(envHome);
+      m_home = envHome;
 
-    // in case an earlier test run crashed without a chance to run the destructor
-    boost::filesystem::remove_all(TESTDIR);
+    auto testHome = boost::filesystem::path(UNIT_TESTS_TMPDIR) / "test-home";
+    if (::setenv("HOME", testHome.c_str(), 1) != 0)
+      NDN_THROW(std::runtime_error("setenv() failed"));
 
-    auto testHome = TESTDIR / "test-home";
     boost::filesystem::create_directories(testHome);
 
-    if (::setenv("HOME", testHome.c_str(), 1) != 0)
-      NDN_THROW_NO_STACK(std::runtime_error("setenv() failed"));
+    std::ofstream clientConf((testHome / ".ndn" / "client.conf").c_str());
+    clientConf << "pib=pib-sqlite3" << std::endl
+               << "tpm=tpm-file" << std::endl;
   }
 
   ~GlobalConfiguration() noexcept
@@ -60,13 +59,9 @@ public:
       ::unsetenv("HOME");
     else
       ::setenv("HOME", m_home.data(), 1);
-
-    boost::system::error_code ec;
-    boost::filesystem::remove_all(TESTDIR, ec); // ignore error
   }
 
 private:
-  static inline const boost::filesystem::path TESTDIR{UNIT_TESTS_TMPDIR};
   std::string m_home;
 };
 

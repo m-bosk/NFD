@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,11 +28,7 @@
 
 #include "channel.hpp"
 
-#include <ndn-cxx/util/scheduler.hpp>
-
 #include <boost/asio/ip/tcp.hpp>
-
-#include <map>
 
 namespace nfd::tcp {
 using Endpoint = boost::asio::ip::tcp::endpoint;
@@ -44,19 +40,20 @@ using DetermineFaceScopeFromAddress = std::function<ndn::nfd::FaceScope(const bo
                                                                         const boost::asio::ip::address& remote)>;
 
 /**
- * \brief Class implementing a TCP-based channel to create faces.
+ * \brief Class implementing TCP-based channel to create faces
  *
- * The channel can create faces as a response to incoming TCP connections (TcpChannel::listen()
- * needs to be called for that to work) or explicitly by using TcpChannel::connect().
+ * Channel can create faces as a response to incoming TCP
+ * connections (TcpChannel::listen needs to be called for that
+ * to work) or explicitly after using TcpChannel::connect method.
  */
 class TcpChannel final : public Channel
 {
 public:
   /**
-   * \brief Create a TCP channel for the specified \p localEndpoint.
+   * \brief Create TCP channel for the local endpoint
    *
-   * To enable the creation of faces upon incoming connections, one needs to
-   * explicitly call listen().
+   * To enable creation faces upon incoming connections,
+   * one needs to explicitly call TcpChannel::listen method.
    */
   TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking,
              DetermineFaceScopeFromAddress determineFaceScope);
@@ -75,7 +72,7 @@ public:
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
-   *        and create faces when remote host makes a connection.
+   *        and create faces when remote host makes a connection
    * \param onFaceCreated  Callback to notify successful creation of the face
    * \param onAcceptFailed Callback to notify when channel fails (accept call
    *                       returns an error)
@@ -85,10 +82,10 @@ public:
   void
   listen(const FaceCreatedCallback& onFaceCreated,
          const FaceCreationFailedCallback& onAcceptFailed,
-         int backlog = boost::asio::socket_base::max_listen_connections);
+         int backlog = boost::asio::ip::tcp::acceptor::max_connections);
 
   /**
-   * \brief Create a face by establishing a TCP connection to \p remoteEndpoint.
+   * \brief Create a face by establishing a TCP connection to \p remoteEndpoint
    */
   void
   connect(const tcp::Endpoint& remoteEndpoint,
@@ -109,11 +106,16 @@ private:
          const FaceCreationFailedCallback& onAcceptFailed);
 
   void
+  handleAccept(const boost::system::error_code& error,
+               const FaceCreatedCallback& onFaceCreated,
+               const FaceCreationFailedCallback& onAcceptFailed);
+
+  void
   handleConnect(const boost::system::error_code& error,
                 const tcp::Endpoint& remoteEndpoint,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                 const FaceParams& params,
-                const ndn::scheduler::EventId& connectTimeoutEvent,
+                const scheduler::EventId& connectTimeoutEvent,
                 const FaceCreatedCallback& onFaceCreated,
                 const FaceCreationFailedCallback& onConnectFailed);
 
@@ -124,9 +126,10 @@ private:
 
 private:
   const tcp::Endpoint m_localEndpoint;
-  const bool m_wantCongestionMarking;
   boost::asio::ip::tcp::acceptor m_acceptor;
+  boost::asio::ip::tcp::socket m_socket;
   std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
+  bool m_wantCongestionMarking;
   DetermineFaceScopeFromAddress m_determineFaceScope;
 };
 

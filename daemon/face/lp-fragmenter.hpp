@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,20 +32,17 @@
 
 namespace nfd::face {
 
-/**
- * \brief Fragments network-layer packets into NDNLPv2 link-layer packets.
- * \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+/** \brief Fragments network-layer packets into NDNLPv2 link-layer packets.
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class LpFragmenter
 {
 public:
-  /**
-   * \brief %Options that control the behavior of LpFragmenter.
+  /** \brief %Options that control the behavior of LpFragmenter.
    */
   struct Options
   {
-    /**
-     * \brief Maximum number of fragments in a packet.
+    /** \brief Maximum number of fragments in a packet.
      */
     size_t nMaxFragments = 400;
   };
@@ -53,32 +50,23 @@ public:
   explicit
   LpFragmenter(const Options& options, const LinkService* linkService = nullptr);
 
-  /**
-   * \brief Set options for fragmenter.
+  /** \brief Set options for fragmenter.
    */
   void
-  setOptions(const Options& options)
-  {
-    m_options = options;
-  }
+  setOptions(const Options& options);
 
-  /**
-   * \brief Returns the LinkService that owns this instance.
+  /** \return LinkService that owns this instance
    *
-   * This is only used for logging, and may be nullptr.
+   *  This is only used for logging, and may be nullptr.
    */
   const LinkService*
-  getLinkService() const noexcept
-  {
-    return m_linkService;
-  }
+  getLinkService() const;
 
-  /**
-   * \brief Fragments a network-layer packet into link-layer packets.
-   * \param packet an LpPacket that contains a network-layer packet;
-   *               must have Fragment field, must not have FragIndex and FragCount fields
-   * \param mtu maximum allowable LpPacket size after fragmentation and sequence number assignment
-   * \return whether fragmentation succeeded, fragmented packets without sequence number
+  /** \brief Fragments a network-layer packet into link-layer packets.
+   *  \param packet an LpPacket that contains a network-layer packet;
+   *                must have Fragment field, must not have FragIndex and FragCount fields
+   *  \param mtu maximum allowable LpPacket size after fragmentation and sequence number assignment
+   *  \return whether fragmentation succeeded, fragmented packets without sequence number
    */
   std::tuple<bool, std::vector<lp::Packet>>
   fragmentPacket(const lp::Packet& packet, size_t mtu);

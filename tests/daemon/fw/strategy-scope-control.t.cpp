@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,7 +39,7 @@
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 
-#include <boost/mp11/list.hpp>
+#include <boost/mpl/vector.hpp>
 
 namespace nfd::tests {
 
@@ -85,17 +85,33 @@ BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyScopeControl)
 
 template<typename S, bool WillSendNackNoRoute, bool CanProcessNack, bool WillRejectPitEntry>
-struct Test
+class Test
 {
+public:
   using Strategy = S;
-  static constexpr bool canProcessNack = CanProcessNack;
-  static constexpr bool willRejectPitEntry = WillRejectPitEntry;
-  static constexpr bool willSendNackNoRoute = WillSendNackNoRoute;
+
+  static bool
+  willRejectPitEntry()
+  {
+    return WillRejectPitEntry;
+  }
+
+  static bool
+  willSendNackNoRoute()
+  {
+    return WillSendNackNoRoute;
+  }
+
+  static bool
+  canProcessNack()
+  {
+    return CanProcessNack;
+  }
 };
 
-using Tests = boost::mp11::mp_list<
+using Tests = boost::mpl::vector<
   Test<AccessStrategy, false, false, true>,
-  Test<AsfStrategy, true, true, true>,
+  Test<AsfStrategy, true, false, true>,
   Test<BestRouteStrategy, true, true, true>,
   Test<MulticastStrategy, false, false, false>,
   Test<RandomStrategy, true, true, true>
@@ -132,11 +148,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToNonLocal,
 
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveInterest(*interest, FaceEndpoint(*this->localFace3), pitEntry); },
-    this->limitedIo, T::willRejectPitEntry + T::willSendNackNoRoute));
+    this->limitedIo, T::willRejectPitEntry() + T::willSendNackNoRoute()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
-  BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), T::willRejectPitEntry);
-  if (T::willSendNackNoRoute) {
+  BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), T::willRejectPitEntry());
+  if (T::willSendNackNoRoute()) {
     BOOST_REQUIRE_EQUAL(this->strategy.sendNackHistory.size(), 1);
     BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.back().header.getReason(), lp::NackReason::NO_ROUTE);
   }
@@ -175,11 +191,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocal,
 
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveInterest(*interest, FaceEndpoint(*this->nonLocalFace1), pitEntry); },
-    this->limitedIo, T::willRejectPitEntry + T::willSendNackNoRoute));
+    this->limitedIo, T::willRejectPitEntry() + T::willSendNackNoRoute()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
-  BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), T::willRejectPitEntry);
-  if (T::willSendNackNoRoute) {
+  BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), T::willRejectPitEntry());
+  if (T::willSendNackNoRoute()) {
     BOOST_REQUIRE_EQUAL(this->strategy.sendNackHistory.size(), 1);
     BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.back().header.getReason(), lp::NackReason::NO_ROUTE);
   }
@@ -221,11 +237,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
 
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveNack(nack, FaceEndpoint(*this->localFace4), pitEntry); },
-    this->limitedIo, T::canProcessNack));
+    this->limitedIo, T::canProcessNack()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 0);
-  if (T::canProcessNack) {
+  if (T::canProcessNack()) {
     BOOST_REQUIRE_EQUAL(this->strategy.sendNackHistory.size(), 1);
     BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.back().header.getReason(), lp::NackReason::NO_ROUTE);
   }
@@ -246,11 +262,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
 
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveNack(nack, FaceEndpoint(*this->localFace4), pitEntry); },
-    this->limitedIo, T::canProcessNack));
+    this->limitedIo, T::canProcessNack()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 0);
-  if (T::canProcessNack) {
+  if (T::canProcessNack()) {
     BOOST_REQUIRE_EQUAL(this->strategy.sendNackHistory.size(), 1);
     BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.back().header.getReason(), lp::NackReason::NO_ROUTE);
   }

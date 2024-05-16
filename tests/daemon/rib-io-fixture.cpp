@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -61,7 +61,7 @@ RibIoFixture::RibIoFixture()
         }
 
         if (g_ribIo->stopped()) {
-          g_ribIo->restart();
+          g_ribIo->reset();
         }
         while (g_ribIo->poll() > 0)
           ;
@@ -109,7 +109,7 @@ RibIoFixture::poll()
     m_ribPollStartCv.notify_all();
 
     if (g_io.stopped()) {
-      g_io.restart();
+      g_io.reset();
     }
 
     nHandlersRun = g_io.poll();

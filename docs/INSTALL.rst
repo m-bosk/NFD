@@ -7,21 +7,18 @@ Supported platforms
 NFD is built against a continuous integration system and has been tested on the
 following platforms:
 
-- Ubuntu 20.04 (focal)
-- Ubuntu 22.04 (jammy)
-- Debian 11 (bullseye)
-- Debian 12 (bookworm)
+- Ubuntu 18.04 / 20.04 / 22.04
+- Debian 11
 - CentOS Stream 9
-- macOS 11 / 12 / 13 / 14
+- macOS 10.15 / 11 / 12 / 13
 
-NFD should also work on the following platforms, although they are not officially
+NFD is known to work on the following platforms, although they are not officially
 supported:
 
-- Any other recent version of Ubuntu not listed above
-- Fedora >= 33
 - Alpine >= 3.12
-- Any version of Raspberry Pi OS based on Debian 11 (bullseye) or later
-- macOS 10.15
+- Fedora >= 29
+- Gentoo Linux
+- Raspberry Pi OS (formerly Raspbian) >= 2019-06-20
 - FreeBSD >= 12.2
 
 .. _Install NFD on Ubuntu Linux using the NDN PPA repository:

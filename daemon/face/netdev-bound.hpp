@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,15 +26,13 @@
 #ifndef NFD_DAEMON_FACE_NETDEV_BOUND_HPP
 #define NFD_DAEMON_FACE_NETDEV_BOUND_HPP
 
-#include "network-predicate.hpp"
 #include "protocol-factory.hpp"
 
 namespace nfd::face {
 
 class FaceSystem;
 
-/**
- * \brief Manages netdev-bound faces.
+/** \brief Manages netdev-bound faces.
  */
 class NetdevBound : noncopyable
 {
@@ -43,7 +41,7 @@ public:
   {
   public:
     RuleParseError(int index, std::string msg)
-      : Error("Error parsing face_system.netdev_bound.rule[" + std::to_string(index) + "]: " + msg)
+      : Error("Error parsing face_system.netdev_bound.rule[" + to_string(index) + "]: " + msg)
       , index(index)
       , msg(std::move(msg))
     {

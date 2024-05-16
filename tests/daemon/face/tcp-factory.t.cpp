@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,7 @@ protected:
   shared_ptr<TcpChannel>
   createChannel(const std::string& localIp, const std::string& localPort)
   {
-    tcp::Endpoint endpoint(boost::asio::ip::make_address(localIp),
+    tcp::Endpoint endpoint(boost::asio::ip::address::from_string(localIp),
                            boost::lexical_cast<uint16_t>(localPort));
     return factory.createChannel(endpoint);
   }
@@ -350,16 +350,13 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
   auto channel1a = createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
   BOOST_CHECK_EQUAL(channel1->getUri().toString(), "tcp4://127.0.0.1:20070");
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
 
   auto channel2 = createChannel("127.0.0.1", "20071");
   BOOST_CHECK_NE(channel1, channel2);
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
 
   auto channel3 = createChannel("::1", "20071");
   BOOST_CHECK_NE(channel2, channel3);
   BOOST_CHECK_EQUAL(channel3->getUri().toString(), "tcp6://[::1]:20071");
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 3);
 }
 
 BOOST_AUTO_TEST_CASE(CreateFace)
@@ -403,8 +400,10 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
-BOOST_AUTO_TEST_CASE(CreateFaceInvalidRequest)
+BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 {
+  createChannel("127.0.0.1", "20071");
+
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20072"),
              FaceUri("tcp4://127.0.0.1:20071"),

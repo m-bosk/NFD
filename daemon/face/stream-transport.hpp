@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,15 +32,13 @@
 
 #include <queue>
 
-#include <boost/asio/defer.hpp>
 #include <boost/asio/write.hpp>
 
 namespace nfd::face {
 
-/**
- * \brief Implements a Transport for stream-based protocols.
+/** \brief Implements Transport for stream-based protocols.
  *
- * \tparam Protocol a stream-based protocol in Boost.Asio
+ *  \tparam Protocol a stream-based protocol in Boost.Asio
  */
 template<class Protocol>
 class StreamTransport : public Transport
@@ -48,10 +46,9 @@ class StreamTransport : public Transport
 public:
   using protocol = Protocol;
 
-  /**
-   * \brief Construct stream transport.
+  /** \brief Construct stream transport.
    *
-   * \param socket Protocol-specific socket for the created transport
+   *  \param socket Protocol-specific socket for the created transport
    */
   explicit
   StreamTransport(typename protocol::socket&& socket);
@@ -105,15 +102,17 @@ protected:
 
 private:
   uint8_t m_receiveBuffer[ndn::MAX_NDN_PACKET_SIZE];
-  size_t m_receiveBufferSize = 0;
+  size_t m_receiveBufferSize;
   std::queue<Block> m_sendQueue;
-  size_t m_sendQueueBytes = 0;
+  size_t m_sendQueueBytes;
 };
 
 
 template<class T>
 StreamTransport<T>::StreamTransport(typename StreamTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
+  , m_receiveBufferSize(0)
+  , m_sendQueueBytes(0)
 {
   // No queue capacity is set because there is no theoretical limit to the size of m_sendQueue.
   // Therefore, protecting against send queue overflows is less critical than in other transport
@@ -145,12 +144,12 @@ StreamTransport<T>::doClose()
     // Use the non-throwing variants and ignore errors, if any.
     boost::system::error_code error;
     m_socket.cancel(error);
-    m_socket.shutdown(boost::asio::socket_base::shutdown_both, error);
+    m_socket.shutdown(protocol::socket::shutdown_both, error);
   }
 
   // Ensure that the Transport stays alive at least until
   // all pending handlers are dispatched
-  boost::asio::defer(getGlobalIoService(), [this] { deferredClose(); });
+  getGlobalIoService().post([this] { deferredClose(); });
 
   // Some bug or feature of Boost.Asio (see https://redmine.named-data.net/issues/1856):
   //

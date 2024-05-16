@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,14 +33,16 @@ Entry::Entry(const Name& prefix)
 }
 
 NextHopList::iterator
-Entry::findNextHop(const Face& face) noexcept
+Entry::findNextHop(const Face& face)
 {
   return std::find_if(m_nextHops.begin(), m_nextHops.end(),
-                      [&face] (const NextHop& nexthop) { return &nexthop.getFace() == &face; });
+                      [&face] (const NextHop& nexthop) {
+                        return &nexthop.getFace() == &face;
+                      });
 }
 
 bool
-Entry::hasNextHop(const Face& face) const noexcept
+Entry::hasNextHop(const Face& face) const
 {
   return const_cast<Entry*>(this)->findNextHop(face) != m_nextHops.end();
 }
@@ -48,7 +50,7 @@ Entry::hasNextHop(const Face& face) const noexcept
 std::pair<NextHopList::iterator, bool>
 Entry::addOrUpdateNextHop(Face& face, uint64_t cost)
 {
-  auto it = findNextHop(face);
+  auto it = this->findNextHop(face);
   bool isNew = false;
   if (it == m_nextHops.end()) {
     m_nextHops.emplace_back(face);
@@ -65,7 +67,7 @@ Entry::addOrUpdateNextHop(Face& face, uint64_t cost)
 bool
 Entry::removeNextHop(const Face& face)
 {
-  auto it = findNextHop(face);
+  auto it = this->findNextHop(face);
   if (it != m_nextHops.end()) {
     m_nextHops.erase(it);
     return true;

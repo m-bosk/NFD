@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,6 @@
 #include "multicast-udp-transport.hpp"
 #include "common/global.hpp"
 
-#include <boost/container/static_vector.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -52,7 +51,7 @@ UdpFactory::UdpFactory(const CtorParams& params)
   : ProtocolFactory(params)
 {
   m_netifAddConn = netmon->onInterfaceAdded.connect([this] (const auto& netif) {
-    applyMcastConfigToNetif(netif);
+    this->applyMcastConfigToNetif(netif);
   });
 }
 
@@ -130,7 +129,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
       else if (key == "mcast_group") {
         const std::string& valueStr = value.get_value<std::string>();
         boost::system::error_code ec;
-        mcastConfig.group.address(ip::make_address_v4(valueStr, ec));
+        mcastConfig.group.address(ip::address_v4::from_string(valueStr, ec));
         if (ec) {
           NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group: '" +
                                       valueStr + "' cannot be parsed as an IPv4 address"));
@@ -146,7 +145,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
       else if (key == "mcast_group_v6") {
         const std::string& valueStr = value.get_value<std::string>();
         boost::system::error_code ec;
-        mcastConfig.groupV6.address(ip::make_address_v6(valueStr, ec));
+        mcastConfig.groupV6.address(ip::address_v6::from_string(valueStr, ec));
         if (ec) {
           NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
                                       valueStr + "' cannot be parsed as an IPv6 address"));
@@ -197,7 +196,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
     providedSchemes.insert("udp4");
   }
   else if (providedSchemes.count("udp4") > 0) {
-    NFD_LOG_WARN("Cannot close UDP channel after its creation");
+    NFD_LOG_WARN("Cannot close udp4 channel after its creation");
   }
 
   if (enableV6) {
@@ -210,7 +209,7 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
     providedSchemes.insert("udp6");
   }
   else if (providedSchemes.count("udp6") > 0) {
-    NFD_LOG_WARN("Cannot close UDP channel after its creation");
+    NFD_LOG_WARN("Cannot close udp6 channel after its creation");
   }
 
   if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
@@ -239,10 +238,10 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
     }
   }
 
-  // Even if there are no configuration changes, we still need to re-apply
-  // the configuration because netifs may have changed.
-  m_mcastConfig = std::move(mcastConfig);
-  applyMcastConfig(context);
+  // Even if there's no configuration change, we still need to re-apply configuration because
+  // netifs may have changed.
+  m_mcastConfig = mcastConfig;
+  this->applyMcastConfig(context);
 }
 
 void
@@ -251,29 +250,29 @@ UdpFactory::doCreateFace(const CreateFaceRequest& req,
                          const FaceCreationFailedCallback& onFailure)
 {
   if (req.localUri) {
-    NFD_LOG_TRACE("createFace: unsupported LocalUri");
+    NFD_LOG_TRACE("Cannot create unicast UDP face with LocalUri");
     onFailure(406, "Unicast UDP faces cannot be created with a LocalUri");
     return;
   }
 
   if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
-    NFD_LOG_TRACE("createFace: unsupported FacePersistency");
+    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
     onFailure(406, "Outgoing UDP faces do not support on-demand persistency");
     return;
   }
 
-  udp::Endpoint endpoint(ip::make_address(req.remoteUri.getHost()),
+  udp::Endpoint endpoint(ip::address::from_string(req.remoteUri.getHost()),
                          boost::lexical_cast<uint16_t>(req.remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
-    NFD_LOG_TRACE("createFace: unsupported multicast endpoint");
+    NFD_LOG_TRACE("createFace does not support multicast faces");
     onFailure(406, "Cannot create multicast UDP faces");
     return;
   }
 
   if (req.params.wantLocalFields) {
     // UDP faces are never local
-    NFD_LOG_TRACE("createFace: cannot create non-local face with local fields enabled");
+    NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
     return;
   }
@@ -281,7 +280,7 @@ UdpFactory::doCreateFace(const CreateFaceRequest& req,
   if (req.params.mtu && *req.params.mtu < MIN_MTU) {
     // The specified MTU must be greater than the minimum possible
     NFD_LOG_TRACE("createFace: override MTU cannot be less than " << MIN_MTU);
-    onFailure(406, "Override MTU cannot be less than " + std::to_string(MIN_MTU));
+    onFailure(406, "Override MTU cannot be less than " + to_string(MIN_MTU));
     return;
   }
 
@@ -378,9 +377,7 @@ UdpFactory::createMulticastFace(const net::NetworkInterface& netif,
                                 [isV4 = localEp.address().is_v4()] (const auto& it) {
                                   return it.first.address().is_v4() == isV4;
                                 });
-  if (channelIt != m_channels.end()) {
-    face->setChannel(channelIt->second);
-  }
+  face->setChannel(channelIt != m_channels.end() ? channelIt->second : nullptr);
 
   return face;
 }
@@ -426,7 +423,7 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
     return {};
   }
 
-  boost::container::static_vector<ip::address, 2> addrs;
+  std::vector<ip::address> addrs;
   for (auto af : {net::AddressFamily::V4, net::AddressFamily::V6}) {
     auto addr = pickAddress(*netif, af);
     if (addr)
@@ -437,7 +434,7 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
     NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": no viable IP address");
     // keep an eye on new addresses
     m_netifConns[netif->getIndex()].addrAddConn =
-      netif->onAddressAdded.connect([=] (auto&&...) { applyMcastConfigToNetif(netif); });
+      netif->onAddressAdded.connect([=] (auto&&...) { this->applyMcastConfigToNetif(netif); });
     return {};
   }
 
@@ -445,14 +442,8 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
 
   std::vector<shared_ptr<Face>> faces;
   for (const auto& addr : addrs) {
-    shared_ptr<Face> face;
-    try {
-      face = createMulticastFace(*netif, addr, addr.is_v4() ? m_mcastConfig.group : m_mcastConfig.groupV6);
-    }
-    catch (const std::runtime_error& e) {
-      NFD_LOG_WARN("Cannot create multicast face on " << addr << ": " << e.what());
-      continue; // not a fatal error
-    }
+    auto face = this->createMulticastFace(*netif, addr,
+                                          addr.is_v4() ? m_mcastConfig.group : m_mcastConfig.groupV6);
     if (face->getId() == INVALID_FACEID) {
       // new face: register with forwarding
       this->addFace(face);
@@ -473,7 +464,7 @@ UdpFactory::applyMcastConfig(const FaceSystem::ConfigContext&)
 
   // create faces if requested by config
   for (const auto& netif : netmon->listNetworkInterfaces()) {
-    auto facesToKeep = applyMcastConfigToNetif(netif);
+    auto facesToKeep = this->applyMcastConfigToNetif(netif);
     for (const auto& face : facesToKeep) {
       // don't destroy face
       facesToClose.erase(face);

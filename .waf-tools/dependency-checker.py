@@ -1,4 +1,6 @@
-from waflib import Options
+# encoding: utf-8
+
+from waflib import Options, Logs
 from waflib.Configure import conf
 
 def addDependencyOptions(self, opt, name, extraHelp=''):

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,6 @@
 
 #include "strategy-choice-module.hpp"
 #include "format-helpers.hpp"
-
-#include <ndn-cxx/mgmt/nfd/status-dataset.hpp>
 
 namespace nfd::tools::nfdc {
 
@@ -150,9 +148,9 @@ StrategyChoiceModule::unset(ExecuteContext& ctx)
 }
 
 void
-StrategyChoiceModule::fetchStatus(ndn::nfd::Controller& controller,
+StrategyChoiceModule::fetchStatus(Controller& controller,
                                   const std::function<void()>& onSuccess,
-                                  const ndn::nfd::DatasetFailureCallback& onFailure,
+                                  const Controller::DatasetFailCallback& onFailure,
                                   const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::StrategyChoiceDataset>(

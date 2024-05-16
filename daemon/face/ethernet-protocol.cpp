@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,7 @@ std::tuple<const ether_header*, std::string>
 checkFrameHeader(span<const uint8_t> packet, const Address& localAddr, const Address& destAddr)
 {
   if (packet.size() < HDR_LEN + MIN_DATA_LEN)
-    return {nullptr, "Received frame too short: " + std::to_string(packet.size()) + " bytes"};
+    return {nullptr, "Received frame too short: " + to_string(packet.size()) + " bytes"};
 
   const ether_header* eh = reinterpret_cast<const ether_header*>(packet.data());
 
@@ -41,9 +41,9 @@ checkFrameHeader(span<const uint8_t> packet, const Address& localAddr, const Add
   // make sure we do not process those frames (see #3348)
   uint16_t ethertype = boost::endian::big_to_native(eh->ether_type);
   if (ethertype != ETHERTYPE_NDN)
-    return {nullptr, "Received frame with wrong ethertype: " + std::to_string(ethertype)};
+    return {nullptr, "Received frame with wrong ethertype: " + to_string(ethertype)};
 
-#ifndef NDEBUG
+#ifdef _DEBUG
   Address shost(eh->ether_shost);
   if (shost == localAddr)
     return {nullptr, "Received frame sent by this host"};

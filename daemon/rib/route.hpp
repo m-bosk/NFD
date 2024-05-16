@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,15 +37,14 @@
 
 namespace nfd::rib {
 
-/**
- * \brief Represents a route for a name prefix.
+/** \brief Represents a route for a name prefix.
  */
-class Route : public ndn::nfd::RouteFlagsTraits<Route>, private boost::equality_comparable<Route>
+class Route : public ndn::nfd::RouteFlagsTraits<Route>
 {
 public:
   /** \brief Default constructor.
    */
-  Route();
+  Route() = default;
 
   /** \brief Construct from a prefix announcement.
    *  \param ann a prefix announcement that has passed verification
@@ -53,14 +52,14 @@ public:
    */
   Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId);
 
-  const ndn::scheduler::EventId&
+  const scheduler::EventId&
   getExpirationEvent() const
   {
     return m_expirationEvent;
   }
 
   void
-  setExpirationEvent(const ndn::scheduler::EventId& eid)
+  setExpirationEvent(const scheduler::EventId& eid)
   {
     m_expirationEvent = eid;
   }
@@ -75,18 +74,6 @@ public:
   getFlags() const
   {
     return flags;
-  }
-
-public: // non-member operators (hidden friends)
-  friend bool
-  operator==(const Route& lhs, const Route& rhs)
-  {
-    return lhs.faceId == rhs.faceId &&
-           lhs.origin == rhs.origin &&
-           lhs.cost == rhs.cost &&
-           lhs.flags == rhs.flags &&
-           lhs.expires == rhs.expires &&
-           lhs.announcement == rhs.announcement;
   }
 
 public:
@@ -113,8 +100,17 @@ public:
   time::steady_clock::time_point annExpires;
 
 private:
-  ndn::scheduler::EventId m_expirationEvent;
+  scheduler::EventId m_expirationEvent;
 };
+
+bool
+operator==(const Route& lhs, const Route& rhs);
+
+inline bool
+operator!=(const Route& lhs, const Route& rhs)
+{
+  return !(lhs == rhs);
+}
 
 std::ostream&
 operator<<(std::ostream& os, const Route& route);

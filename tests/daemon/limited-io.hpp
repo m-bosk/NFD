@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,10 +28,7 @@
 
 #include "tests/daemon/global-io-fixture.hpp"
 
-#include <ndn-cxx/util/scheduler.hpp>
-
 #include <exception>
-#include <limits>
 
 namespace nfd::tests {
 
@@ -105,7 +102,7 @@ private:
   GlobalIoTimeFixture* m_fixture;
   StopReason m_reason;
   int m_nOpsRemaining = 0;
-  ndn::scheduler::EventId m_timeout;
+  scheduler::EventId m_timeout;
   std::exception_ptr m_lastException;
   bool m_isRunning = false;
 };

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,151 +26,16 @@
 #ifndef NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 #define NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 
-#include "strategy-info-host.hpp"
-
-#include <ndn-cxx/util/scheduler.hpp>
+#include "pit-in-record.hpp"
+#include "pit-out-record.hpp"
 
 #include <list>
 
-namespace nfd {
-
-namespace face {
-class Face;
-} // namespace face
-using face::Face;
-
-namespace name_tree {
+namespace nfd::name_tree {
 class Entry;
-} // namespace name_tree
+} // namespace nfd::name_tree
 
-namespace pit {
-
-/**
- * \brief Contains information about an Interest on an incoming or outgoing face.
- * \note This class is an implementation detail to extract common functionality
- *       of InRecord and OutRecord.
- */
-class FaceRecord : public StrategyInfoHost
-{
-public:
-  explicit
-  FaceRecord(Face& face)
-    : m_face(face)
-  {
-  }
-
-  Face&
-  getFace() const noexcept
-  {
-    return m_face;
-  }
-
-  Interest::Nonce
-  getLastNonce() const noexcept
-  {
-    return m_lastNonce;
-  }
-
-  time::steady_clock::time_point
-  getLastRenewed() const noexcept
-  {
-    return m_lastRenewed;
-  }
-
-  /**
-   * \brief Returns the time point at which this record expires.
-   * \return getLastRenewed() + InterestLifetime
-   */
-  time::steady_clock::time_point
-  getExpiry() const noexcept
-  {
-    return m_expiry;
-  }
-
-  /**
-   * \brief Updates lastNonce, lastRenewed, expiry fields.
-   */
-  void
-  update(const Interest& interest);
-
-private:
-  Face& m_face;
-  Interest::Nonce m_lastNonce{0, 0, 0, 0};
-  time::steady_clock::time_point m_lastRenewed = time::steady_clock::time_point::min();
-  time::steady_clock::time_point m_expiry = time::steady_clock::time_point::min();
-};
-
-/**
- * \brief Contains information about an Interest from an incoming face.
- */
-class InRecord : public FaceRecord
-{
-public:
-  using FaceRecord::FaceRecord;
-
-  const Interest&
-  getInterest() const noexcept
-  {
-    BOOST_ASSERT(m_interest != nullptr);
-    return *m_interest;
-  }
-
-  void
-  update(const Interest& interest);
-
-private:
-  shared_ptr<const Interest> m_interest;
-};
-
-/**
- * \brief Contains information about an Interest toward an outgoing face.
- */
-class OutRecord : public FaceRecord
-{
-public:
-  using FaceRecord::FaceRecord;
-
-  /**
-   * \brief Returns the last Nack returned by getFace().
-   *
-   * A nullptr return value means the Interest is still pending or has timed out.
-   * A non-null return value means the last outgoing Interest has been Nacked.
-   */
-  const lp::NackHeader*
-  getIncomingNack() const noexcept
-  {
-    return m_incomingNack.get();
-  }
-
-  /**
-   * \brief Sets a Nack received from getFace().
-   * \return whether incoming Nack is accepted
-   *
-   * This is invoked in incoming Nack pipeline.
-   *
-   * An incoming Nack is accepted if its Nonce matches getLastNonce().
-   * If accepted, `nack.getHeader()` will be copied, and any pointers
-   * previously returned by getIncomingNack() are invalidated.
-   */
-  bool
-  setIncomingNack(const lp::Nack& nack);
-
-  /**
-   * \brief Clears last Nack.
-   *
-   * This is invoked in outgoing Interest pipeline.
-   *
-   * Any pointers previously returned by getIncomingNack() are invalidated.
-   */
-  void
-  clearIncomingNack() noexcept
-  {
-    m_incomingNack.reset();
-  }
-
-private:
-  unique_ptr<lp::NackHeader> m_incomingNack;
-};
+namespace nfd::pit {
 
 /**
  * \brief An unordered collection of in-records.
@@ -226,11 +91,10 @@ public:
   canMatch(const Interest& interest, size_t nEqualNameComps = 0) const;
 
 public: // in-record
-  /**
-   * \brief Returns the collection of in-records.
+  /** \return collection of in-records
    */
   const InRecordCollection&
-  getInRecords() const noexcept
+  getInRecords() const
   {
     return m_inRecords;
   }
@@ -241,74 +105,62 @@ public: // in-record
    *                This implies the entry is new or has been satisfied or Nacked.
    */
   bool
-  hasInRecords() const noexcept
+  hasInRecords() const
   {
     return !m_inRecords.empty();
   }
 
   InRecordCollection::iterator
-  in_begin() noexcept
+  in_begin()
   {
     return m_inRecords.begin();
   }
 
   InRecordCollection::const_iterator
-  in_begin() const noexcept
+  in_begin() const
   {
     return m_inRecords.begin();
   }
 
   InRecordCollection::iterator
-  in_end() noexcept
+  in_end()
   {
     return m_inRecords.end();
   }
 
   InRecordCollection::const_iterator
-  in_end() const noexcept
+  in_end() const
   {
     return m_inRecords.end();
   }
 
-  /**
-   * \brief Get the in-record for \p face.
-   * \return an iterator to the in-record, or in_end() if it does not exist
+  /** \brief Get the in-record for \p face.
+   *  \return an iterator to the in-record, or in_end() if it does not exist
    */
   InRecordCollection::iterator
-  findInRecord(const Face& face) noexcept;
+  getInRecord(const Face& face);
 
-  /**
-   * \brief Insert or update an in-record.
-   * \return an iterator to the new or updated in-record
+  /** \brief Insert or update an in-record.
+   *  \return an iterator to the new or updated in-record
    */
   InRecordCollection::iterator
   insertOrUpdateInRecord(Face& face, const Interest& interest);
 
-  /**
-   * \brief Removes the in-record at position \p pos.
-   * \param pos iterator to the in-record to remove; must be valid and dereferenceable.
+  /** \brief Delete the in-record for \p face if it exists.
    */
   void
-  deleteInRecord(InRecordCollection::const_iterator pos)
-  {
-    m_inRecords.erase(pos);
-  }
+  deleteInRecord(const Face& face);
 
-  /**
-   * \brief Removes all in-records.
+  /** \brief Delete all in-records.
    */
   void
-  clearInRecords() noexcept
-  {
-    m_inRecords.clear();
-  }
+  clearInRecords();
 
 public: // out-record
-  /**
-   * \brief Returns the collection of out-records.
+  /** \return collection of in-records
    */
   const OutRecordCollection&
-  getOutRecords() const noexcept
+  getOutRecords() const
   {
     return m_outRecords;
   }
@@ -320,51 +172,48 @@ public: // out-record
    *                This implies the Interest has not been forwarded.
    */
   bool
-  hasOutRecords() const noexcept
+  hasOutRecords() const
   {
     return !m_outRecords.empty();
   }
 
   OutRecordCollection::iterator
-  out_begin() noexcept
+  out_begin()
   {
     return m_outRecords.begin();
   }
 
   OutRecordCollection::const_iterator
-  out_begin() const noexcept
+  out_begin() const
   {
     return m_outRecords.begin();
   }
 
   OutRecordCollection::iterator
-  out_end() noexcept
+  out_end()
   {
     return m_outRecords.end();
   }
 
   OutRecordCollection::const_iterator
-  out_end() const noexcept
+  out_end() const
   {
     return m_outRecords.end();
   }
 
-  /**
-   * \brief Get the out-record for \p face.
-   * \return an iterator to the out-record, or out_end() if it does not exist
+  /** \brief Get the out-record for \p face.
+   *  \return an iterator to the out-record, or out_end() if it does not exist
    */
   OutRecordCollection::iterator
-  findOutRecord(const Face& face) noexcept;
+  getOutRecord(const Face& face);
 
-  /**
-   * \brief Insert or update an out-record.
-   * \return an iterator to the new or updated out-record
+  /** \brief Insert or update an out-record.
+   *  \return an iterator to the new or updated out-record
    */
   OutRecordCollection::iterator
   insertOrUpdateOutRecord(Face& face, const Interest& interest);
 
-  /**
-   * \brief Delete the out-record for \p face if it exists.
+  /** \brief Delete the out-record for \p face if it exists.
    */
   void
   deleteOutRecord(const Face& face);
@@ -374,14 +223,22 @@ public:
    *
    *  This timer is used in forwarding pipelines to delete the entry
    */
-  ndn::scheduler::EventId expiryTimer;
+  scheduler::EventId expiryTimer;
 
   /** \brief Indicates whether this PIT entry is satisfied.
    */
   bool isSatisfied = false;
 
+  /** \brief Indicates whether this PIT entry is soft state.
+   */
+  bool isSoftState = false;
+
+  /** \brief Indicates whether this PIT entry is expired.
+   */
+  bool isExpired = false;
+
   /** \brief Data freshness period.
-   *  \note This field is meaningful only if #isSatisfied is true
+   *  \note This field is meaningful only if isSatisfied is true
    */
   time::milliseconds dataFreshnessPeriod = 0_ms;
 
@@ -395,7 +252,6 @@ private:
   friend ::nfd::name_tree::Entry;
 };
 
-} // namespace pit
-} // namespace nfd
+} // namespace nfd::pit
 
 #endif // NFD_DAEMON_TABLE_PIT_ENTRY_HPP

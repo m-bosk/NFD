@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,13 @@
 #include "name-tree.hpp"
 #include "common/logger.hpp"
 
+#include <boost/range/concepts.hpp>
+#include <ndn-cxx/util/concepts.hpp>
+
 namespace nfd::name_tree {
+
+NDN_CXX_ASSERT_FORWARD_ITERATOR(Iterator);
+BOOST_CONCEPT_ASSERT((boost::ForwardRangeConcept<Range>));
 
 NFD_LOG_INIT(NameTreeIterator);
 
@@ -48,6 +54,20 @@ Iterator::operator++()
   m_impl->advance(*this);
   NFD_LOG_TRACE("advanced " << *this);
   return *this;
+}
+
+Iterator
+Iterator::operator++(int)
+{
+  Iterator copy = *this;
+  this->operator++();
+  return copy;
+}
+
+bool
+Iterator::operator==(const Iterator& other) const
+{
+  return m_entry == other.m_entry;
 }
 
 std::ostream&

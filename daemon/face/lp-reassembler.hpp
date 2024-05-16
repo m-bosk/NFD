@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,10 +29,6 @@
 #include "face-common.hpp"
 
 #include <ndn-cxx/lp/packet.hpp>
-#include <ndn-cxx/lp/sequence.hpp>
-#include <ndn-cxx/util/scheduler.hpp>
-
-#include <map>
 
 namespace nfd::face {
 
@@ -43,20 +39,17 @@ namespace nfd::face {
 class LpReassembler : noncopyable
 {
 public:
-  /**
-   * \brief %Options that control the behavior of LpReassembler.
+  /** \brief %Options that control the behavior of LpReassembler.
    */
   struct Options
   {
-    /**
-     * \brief Maximum number of fragments in a packet.
+    /** \brief Maximum number of fragments in a packet.
      *
-     * LpPackets with FragCount over this limit are dropped.
+     *  LpPackets with FragCount over this limit are dropped.
      */
     size_t nMaxFragments = 400;
 
-    /**
-     * \brief Timeout before a partially reassembled packet is dropped.
+    /** \brief Timeout before a partially reassembled packet is dropped.
      */
     time::nanoseconds reassemblyTimeout = 500_ms;
   };
@@ -64,47 +57,34 @@ public:
   explicit
   LpReassembler(const Options& options, const LinkService* linkService = nullptr);
 
-  /**
-   * \brief Set options for reassembler.
+  /** \brief Set options for reassembler.
    */
   void
-  setOptions(const Options& options)
-  {
-    m_options = options;
-  }
+  setOptions(const Options& options);
 
-  /**
-   * \brief Returns the LinkService that owns this instance.
+  /** \return LinkService that owns this instance
    *
-   * This is only used for logging, and may be nullptr.
+   *  This is only used for logging, and may be nullptr.
    */
   const LinkService*
-  getLinkService() const noexcept
-  {
-    return m_linkService;
-  }
+  getLinkService() const;
 
-  /**
-   * \brief Adds received fragment to the buffer.
-   * \param remoteEndpoint endpoint that sent the packet
-   * \param packet received fragment; must have Fragment field
-   * \return a tuple containing:
-   *         whether a network-layer packet has been completely received,
-   *         the reassembled network-layer packet,
-   *         the first fragment for inspecting other NDNLPv2 headers
-   * \throw tlv::Error packet is malformed
+  /** \brief Adds received fragment to the buffer.
+   *  \param remoteEndpoint endpoint that sent the packet
+   *  \param packet received fragment; must have Fragment field
+   *  \return a tuple containing:
+   *          whether a network-layer packet has been completely received,
+   *          the reassembled network-layer packet,
+   *          the first fragment for inspecting other NDNLPv2 headers
+   *  \throw tlv::Error packet is malformed
    */
   std::tuple<bool, Block, lp::Packet>
   receiveFragment(const EndpointId& remoteEndpoint, const lp::Packet& packet);
 
-  /**
-   * \brief Count of partial packets.
+  /** \brief Count of partial packets.
    */
   size_t
-  size() const noexcept
-  {
-    return m_partialPackets.size();
-  }
+  size() const;
 
   /**
    * \brief Notifies before a partial packet is dropped due to timeout.
@@ -125,7 +105,7 @@ private:
     std::vector<lp::Packet> fragments;
     size_t fragCount; ///< total fragments
     size_t nReceivedFragments; ///< number of received fragments
-    ndn::scheduler::ScopedEventId dropTimer;
+    scheduler::ScopedEventId dropTimer;
   };
 
   /**
@@ -150,6 +130,24 @@ private:
 
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<LpReassembler>& flh);
+
+inline void
+LpReassembler::setOptions(const Options& options)
+{
+  m_options = options;
+}
+
+inline const LinkService*
+LpReassembler::getLinkService() const
+{
+  return m_linkService;
+}
+
+inline size_t
+LpReassembler::size() const
+{
+  return m_partialPackets.size();
+}
 
 } // namespace nfd::face
 

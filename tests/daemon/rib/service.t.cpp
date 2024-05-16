@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,9 +29,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/rib-io-fixture.hpp"
 
-#include <boost/asio/post.hpp>
 #include <boost/property_tree/info_parser.hpp>
-
 #include <sstream>
 
 namespace nfd::tests {
@@ -56,7 +54,6 @@ protected:
   ndn::KeyChain m_ribKeyChain;
 };
 
-BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_FIXTURE_TEST_SUITE(TestService, RibServiceFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
@@ -66,7 +63,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_THROW(Service::get(), std::logic_error);
   BOOST_CHECK_THROW(Service(section, m_ribKeyChain), std::logic_error);
 
-  boost::asio::post(getRibIoService(), [&] {
+  runOnRibIoService([&] {
     {
       BOOST_CHECK_THROW(Service::get(), std::logic_error);
       Service ribService(section, m_ribKeyChain);
@@ -90,7 +87,7 @@ BOOST_AUTO_TEST_CASE(EmptyLocalhostSecurity)
     }
   )CONFIG";
 
-  boost::asio::post(getRibIoService(), [&] {
+  runOnRibIoService([&] {
     BOOST_CHECK_NO_THROW(Service(makeSection(CONFIG), m_ribKeyChain));
   });
   poll();
@@ -105,7 +102,7 @@ BOOST_AUTO_TEST_CASE(EmptyPrefixAnnouncementValidation)
     }
   )CONFIG";
 
-  boost::asio::post(getRibIoService(), [&] {
+  runOnRibIoService([&] {
     BOOST_CHECK_NO_THROW(Service(makeSection(CONFIG), m_ribKeyChain));
   });
   poll();
@@ -134,7 +131,7 @@ BOOST_AUTO_TEST_CASE(LocalhopAndPropagate)
     }
   )CONFIG";
 
-  boost::asio::post(getRibIoService(), [&] {
+  runOnRibIoService([&] {
     BOOST_CHECK_EXCEPTION(Service(makeSection(CONFIG), m_ribKeyChain), ConfigFile::Error,
                           [] (const auto& e) {
                             return e.what() == "localhop_security and auto_prefix_propagate "
@@ -147,6 +144,5 @@ BOOST_AUTO_TEST_CASE(LocalhopAndPropagate)
 BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_SUITE_END() // TestService
-BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace nfd::tests

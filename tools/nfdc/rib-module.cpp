@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,8 +27,6 @@
 #include "face-module.hpp"
 #include "face-helpers.hpp"
 #include "format-helpers.hpp"
-
-#include <ndn-cxx/mgmt/nfd/status-dataset.hpp>
 
 namespace nfd::tools::nfdc {
 
@@ -302,9 +300,9 @@ RibModule::remove(ExecuteContext& ctx)
 }
 
 void
-RibModule::fetchStatus(ndn::nfd::Controller& controller,
+RibModule::fetchStatus(Controller& controller,
                        const std::function<void()>& onSuccess,
-                       const ndn::nfd::DatasetFailureCallback& onFailure,
+                       const Controller::DatasetFailCallback& onFailure,
                        const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::RibDataset>(

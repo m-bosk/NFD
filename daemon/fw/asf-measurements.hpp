@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,6 @@
 #ifndef NFD_DAEMON_FW_ASF_MEASUREMENTS_HPP
 #define NFD_DAEMON_FW_ASF_MEASUREMENTS_HPP
 
-#include "face/face-common.hpp"
 #include "fw/strategy-info.hpp"
 #include "table/measurements-accessor.hpp"
 
@@ -36,9 +35,8 @@
 
 namespace nfd::fw::asf {
 
-/**
- * \brief Strategy information for each face in a namespace.
- */
+/** \brief Strategy information for each face in a namespace
+*/
 class FaceInfo
 {
 public:
@@ -55,7 +53,7 @@ public:
   }
 
   time::nanoseconds
-  scheduleTimeout(const Name& interestName, ndn::scheduler::EventCallback cb);
+  scheduleTimeout(const Name& interestName, scheduler::EventCallback cb);
 
   void
   cancelTimeout(const Name& prefix);
@@ -72,6 +70,12 @@ public:
   {
     m_lastRtt = RTT_TIMEOUT;
     cancelTimeout(interestName);
+  }
+
+  bool
+  hasTimeout() const
+  {
+    return getLastRtt() == RTT_TIMEOUT;
   }
 
   time::nanoseconds
@@ -109,18 +113,17 @@ private:
   size_t m_nTimeouts = 0;
 
   // Timeout associated with measurement
-  ndn::scheduler::ScopedEventId m_measurementExpiration;
+  scheduler::ScopedEventId m_measurementExpiration;
   friend class NamespaceInfo;
 
   // RTO associated with Interest
-  ndn::scheduler::ScopedEventId m_timeoutEvent;
+  scheduler::ScopedEventId m_timeoutEvent;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * \brief Stores strategy information about each face in this namespace.
+/** \brief Stores strategy information about each face in this namespace
  */
 class NamespaceInfo final : public StrategyInfo
 {
@@ -180,8 +183,7 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * \brief Helper class to retrieve and create strategy measurements.
+/** \brief Helper class to retrieve and create strategy measurements
  */
 class AsfMeasurements : noncopyable
 {

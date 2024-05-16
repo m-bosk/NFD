@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,9 +31,7 @@
 #include <ndn-cxx/lp/packet.hpp>
 #include <ndn-cxx/lp/sequence.hpp>
 #include <ndn-cxx/util/rtt-estimator.hpp>
-#include <ndn-cxx/util/scheduler.hpp>
 
-#include <map>
 #include <queue>
 
 namespace nfd::face {
@@ -74,27 +72,21 @@ public:
 
   LpReliability(const Options& options, GenericLinkService* linkService);
 
-  /**
-   * \brief Called when an Interest is dropped for exceeding the allowed number of retransmissions.
+  /** \brief Signals on Interest dropped by reliability system for exceeding allowed number of retx.
    */
   signal::Signal<LpReliability, Interest> onDroppedInterest;
 
-  /**
-   * \brief Set options for reliability.
+  /** \brief Set options for reliability.
    */
   void
   setOptions(const Options& options);
 
-  /**
-   * \brief Returns the GenericLinkService that owns this instance.
+  /** \return GenericLinkService that owns this instance
    *
-   * This is only used for logging, and may be nullptr.
+   *  This is only used for logging, and may be nullptr.
    */
   const GenericLinkService*
-  getLinkService() const noexcept
-  {
-    return m_linkService;
-  }
+  getLinkService() const;
 
   /** \brief Observe outgoing fragment(s) of a network packet and store for potential retransmission.
    *  \param frags fragments of network packet
@@ -182,17 +174,14 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   {
   public:
     explicit
-    UnackedFrag(lp::Packet p)
-      : pkt(std::move(p))
-    {
-    }
+    UnackedFrag(lp::Packet pkt);
 
   public:
     lp::Packet pkt;
-    ndn::scheduler::ScopedEventId rtoTimer;
-    time::steady_clock::time_point sendTime = time::steady_clock::now();
-    size_t retxCount = 0;
-    size_t nGreaterSeqAcks = 0; ///< Number of Acks received for sequences greater than this fragment
+    scheduler::ScopedEventId rtoTimer;
+    time::steady_clock::time_point sendTime;
+    size_t retxCount;
+    size_t nGreaterSeqAcks; //!< number of Acks received for sequences greater than this fragment
     shared_ptr<NetPkt> netPkt;
   };
 
@@ -202,21 +191,17 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   class NetPkt
   {
   public:
-    NetPkt(lp::Packet&& p, bool isInterest)
-      : pkt(std::move(p))
-      , isInterest(isInterest)
-    {
-    }
+    NetPkt(lp::Packet&& pkt, bool isInterest);
 
   public:
     std::vector<UnackedFrags::iterator> unackedFrags;
     lp::Packet pkt;
     bool isInterest;
-    bool didRetx = false;
+    bool didRetx;
   };
 
   Options m_options;
-  GenericLinkService* m_linkService = nullptr;
+  GenericLinkService* m_linkService;
   UnackedFrags m_unackedFrags;
   // An iterator that points to the first unacknowledged fragment in the current window. The window
   // can wrap around so that the beginning of the window is at a TxSequence greater than other
@@ -227,7 +212,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::map<lp::Sequence, time::steady_clock::time_point> m_recentRecvSeqs;
   std::queue<lp::Sequence> m_recentRecvSeqsQueue;
   lp::Sequence m_lastTxSeqNo;
-  ndn::scheduler::ScopedEventId m_idleAckTimer;
+  scheduler::ScopedEventId m_idleAckTimer;
   ndn::util::RttEstimator m_rttEst;
 };
 

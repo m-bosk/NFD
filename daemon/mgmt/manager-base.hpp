@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,8 +33,6 @@
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 #include <ndn-cxx/mgmt/nfd/control-response.hpp>
 
-#include <functional>
-
 namespace nfd {
 
 using ndn::mgmt::Dispatcher;
@@ -55,6 +53,9 @@ public:
     using std::runtime_error::runtime_error;
   };
 
+  virtual
+  ~ManagerBase();
+
   const std::string&
   getModule() const
   {
@@ -63,17 +64,12 @@ public:
 
 protected:
   /**
-   * @warning If you use this constructor, you MUST override makeAuthorization().
+   * @warning if you use this constructor, you MUST override makeAuthorization()
    */
-  ManagerBase(std::string_view module, Dispatcher& dispatcher);
+  ManagerBase(const std::string& module, Dispatcher& dispatcher);
 
-  ManagerBase(std::string_view module, Dispatcher& dispatcher,
+  ManagerBase(const std::string& module, Dispatcher& dispatcher,
               CommandAuthenticator& authenticator);
-
-  // ManagerBase is not supposed to be used polymorphically, so we make the destructor
-  // protected to prevent deletion of derived objects through a pointer to the base class,
-  // which would be UB when the destructor is non-virtual.
-  ~ManagerBase();
 
 NFD_PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
   // difference from mgmt::ControlCommand: accepts nfd::ControlParameters

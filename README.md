@@ -6,11 +6,10 @@
 
 </div>
 
-![Latest version](https://img.shields.io/github/v/tag/named-data/NFD?label=Latest%20version)
-![Language](https://img.shields.io/badge/C%2B%2B-17-blue)
 [![CI](https://github.com/named-data/NFD/actions/workflows/ci.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/ci.yml)
-[![Docker](https://github.com/named-data/NFD/actions/workflows/docker.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/docker.yml)
 [![Docs](https://github.com/named-data/NFD/actions/workflows/docs.yml/badge.svg)](https://github.com/named-data/NFD/actions/workflows/docs.yml)
+![Language](https://img.shields.io/badge/C%2B%2B-17-blue)
+![Latest version](https://img.shields.io/github/v/tag/named-data/NFD?label=Latest%20version)
 
 ## Overview
 
@@ -60,11 +59,3 @@ and [`README-dev.md`](README-dev.md) to get started.
 
 NFD is free software distributed under the GNU General Public License version 3.
 See [`COPYING.md`](COPYING.md) for details.
-
-NFD contains third-party software, licensed under the following licenses:
-
-* *CityHash* is licensed under the
-  [MIT license](https://github.com/google/cityhash/blob/master/COPYING)
-* The *WebSocket++* library is licensed under the
-  [3-clause BSD license](https://github.com/zaphoyd/websocketpp/blob/0.8.1/COPYING)
-* The *waf* build system is licensed under the [3-clause BSD license](waf)

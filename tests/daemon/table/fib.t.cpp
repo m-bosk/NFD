@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,13 +31,9 @@
 #include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-#include <ndn-cxx/util/concepts.hpp>
-
 namespace nfd::tests {
 
 using namespace nfd::fib;
-
-NDN_CXX_ASSERT_FORWARD_ITERATOR(Fib::const_iterator);
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestFib, GlobalIoFixture)
@@ -244,21 +240,20 @@ BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithMeasurementsEntry)
   BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(mABCD).getPrefix(), "/A/B/C");
 }
 
-static void
+void
 validateFindExactMatch(Fib& fib, const Name& target)
 {
-  BOOST_TEST_INFO_SCOPE(target);
   const Entry* entry = fib.findExactMatch(target);
-  BOOST_REQUIRE(entry != nullptr);
+  BOOST_REQUIRE_MESSAGE(entry != nullptr, "No entry found for " << target);
   BOOST_CHECK_EQUAL(entry->getPrefix(), target);
 }
 
-static void
+void
 validateNoExactMatch(Fib& fib, const Name& target)
 {
-  BOOST_TEST_INFO_SCOPE(target);
   const Entry* entry = fib.findExactMatch(target);
-  BOOST_CHECK(entry == nullptr);
+  BOOST_CHECK_MESSAGE(entry == nullptr,
+                      "Found unexpected entry for " << target);
 }
 
 BOOST_AUTO_TEST_CASE(ExactMatch)
@@ -295,12 +290,13 @@ BOOST_AUTO_TEST_CASE(ExactMatchEmpty)
   validateNoExactMatch(fib, "/nothing/here");
 }
 
-static void
+void
 validateErase(Fib& fib, const Name& target)
 {
-  BOOST_TEST_INFO_SCOPE(target);
   fib.erase(target);
-  BOOST_CHECK(fib.findExactMatch(target) == nullptr);
+
+  const Entry* entry = fib.findExactMatch(target);
+  BOOST_CHECK_MESSAGE(entry == nullptr, "Found \"removed\" entry for " << target);
 }
 
 BOOST_AUTO_TEST_CASE(Erase)

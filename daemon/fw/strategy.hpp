@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,10 +30,6 @@
 #include "table/measurements-accessor.hpp"
 
 #include <boost/lexical_cast/try_lexical_convert.hpp>
-
-#include <functional>
-#include <map>
-#include <set>
 
 namespace nfd::fw {
 
@@ -135,7 +131,7 @@ public: // triggers
    * The Interest:
    *  - has not exceeded HopLimit
    *  - does not violate Scope
-   *  - has not looped
+   *  - is not looped
    *  - cannot be satisfied by ContentStore
    *  - is under a namespace managed by this strategy
    *
@@ -159,20 +155,6 @@ public: // triggers
   virtual void
   afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                        const shared_ptr<pit::Entry>& pitEntry) = 0;
-
-  /**
-   * \brief Trigger after an Interest loop is detected.
-   *
-   * The Interest:
-   *  - has not exceeded HopLimit
-   *  - does not violate Scope
-   *  - has looped
-   *  - is under a namespace managed by this strategy
-   *
-   * In the base class, this method sends a Nack with reason DUPLICATE to \p ingress.
-   */
-  virtual void
-  onInterestLoop(const Interest& interest, const FaceEndpoint& ingress);
 
   /**
    * \brief Trigger after a matching Data is found in the Content Store.
@@ -354,21 +336,6 @@ protected: // actions
   }
 
   /**
-   * \brief Send a Nack packet without going through the outgoing Nack pipeline.
-   *
-   * \param nack the Nack packet
-   * \param egress face through which to send out the Nack
-   * \return Whether the Nack was sent (true) or dropped (false)
-   */
-  NFD_VIRTUAL_WITH_TESTS bool
-  sendNack(const lp::Nack& nack, Face& egress)
-  {
-    egress.sendNack(nack);
-    ++m_forwarder.m_counters.nOutNacks;
-    return true;
-  }
-
-  /**
    * \brief Send Nack to every face that has an in-record, except those in \p exceptFaces
    * \param header the Nack header
    * \param pitEntry the PIT entry
@@ -523,10 +490,9 @@ public:
 
 } // namespace nfd::fw
 
-/**
- * \brief Registers a forwarding strategy.
+/** \brief Registers a strategy
  *
- * This macro should appear once in the `.cpp` of each strategy.
+ *  This macro should appear once in .cpp of each strategy.
  */
 #define NFD_REGISTER_STRATEGY(S)                       \
 static class NfdAuto ## S ## StrategyRegistrationClass \
@@ -537,26 +503,5 @@ public:                                                \
     ::nfd::fw::Strategy::registerType<S>();            \
   }                                                    \
 } g_nfdAuto ## S ## StrategyRegistrationVariable
-
-/// Logs the reception of \p interest on \p ingress, followed by \p msg, at DEBUG level.
-#define NFD_LOG_INTEREST_FROM(interest, ingress, msg)  \
-  NFD_LOG_DEBUG("interest=" << (interest).getName() << \
-                " nonce=" << (interest).getNonce() <<  \
-                " from=" << (ingress) <<               \
-                ' ' << msg)
-
-/// Logs the reception of \p data on \p ingress, followed by \p msg, at DEBUG level.
-#define NFD_LOG_DATA_FROM(data, ingress, msg)          \
-  NFD_LOG_DEBUG("data=" << (data).getName() <<         \
-                " from=" << (ingress) <<               \
-                ' ' << msg)
-
-/// Logs the reception of \p nack on \p ingress, followed by \p msg, at DEBUG level.
-#define NFD_LOG_NACK_FROM(nack, ingress, msg)                   \
-  NFD_LOG_DEBUG("nack=" << (nack).getInterest().getName() <<    \
-                " nonce=" << (nack).getInterest().getNonce() << \
-                " reason=" << (nack).getReason() <<             \
-                " from=" << (ingress) <<                        \
-                ' ' << msg)
 
 #endif // NFD_DAEMON_FW_STRATEGY_HPP

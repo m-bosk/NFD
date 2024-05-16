@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,13 +40,11 @@
 
 namespace nfd::face {
 
-namespace ip = boost::asio::ip;
+NFD_LOG_MEMBER_INIT_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multicast>), MulticastUdpTransport);
 
-NFD_LOG_MEMBER_INIT_SPECIALIZED((DatagramTransport<ip::udp, Multicast>), MulticastUdpTransport);
-
-MulticastUdpTransport::MulticastUdpTransport(const ip::udp::endpoint& multicastGroup,
-                                             ip::udp::socket&& recvSocket,
-                                             ip::udp::socket&& sendSocket,
+MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& multicastGroup,
+                                             protocol::socket&& recvSocket,
+                                             protocol::socket&& sendSocket,
                                              ndn::nfd::LinkType linkType)
   : DatagramTransport(std::move(recvSocket))
   , m_multicastGroup(multicastGroup)
@@ -59,7 +57,7 @@ MulticastUdpTransport::MulticastUdpTransport(const ip::udp::endpoint& multicastG
   this->setLinkType(linkType);
   this->setMtu(udp::computeMtu(m_sendSocket.local_endpoint()));
 
-  boost::asio::socket_base::send_buffer_size sendBufferSizeOption;
+  protocol::socket::send_buffer_size sendBufferSizeOption;
   boost::system::error_code error;
   m_sendSocket.get_option(sendBufferSizeOption);
   if (error) {
@@ -133,26 +131,27 @@ bindToDevice(int fd, const std::string& ifname)
 }
 
 void
-MulticastUdpTransport::openRxSocket(ip::udp::socket& sock,
-                                    const ip::udp::endpoint& multicastGroup,
-                                    const ip::address& localAddress,
+MulticastUdpTransport::openRxSocket(protocol::socket& sock,
+                                    const protocol::endpoint& multicastGroup,
+                                    const boost::asio::ip::address& localAddress,
                                     const ndn::net::NetworkInterface* netif)
 {
   BOOST_ASSERT(!sock.is_open());
 
   sock.open(multicastGroup.protocol());
-  sock.set_option(boost::asio::socket_base::reuse_address(true));
+  sock.set_option(protocol::socket::reuse_address(true));
 
   if (multicastGroup.address().is_v4()) {
     BOOST_ASSERT(localAddress.is_v4());
     sock.bind(multicastGroup);
-    sock.set_option(ip::multicast::join_group(multicastGroup.address().to_v4(), localAddress.to_v4()));
+    sock.set_option(boost::asio::ip::multicast::join_group(multicastGroup.address().to_v4(),
+                                                           localAddress.to_v4()));
   }
   else {
     BOOST_ASSERT(multicastGroup.address().to_v6().scope_id() != 0);
-    sock.set_option(ip::v6_only(true));
+    sock.set_option(boost::asio::ip::v6_only(true));
     sock.bind(multicastGroup);
-    sock.set_option(ip::multicast::join_group(multicastGroup.address().to_v6()));
+    sock.set_option(boost::asio::ip::multicast::join_group(multicastGroup.address().to_v6()));
   }
 
   if (netif)
@@ -160,27 +159,27 @@ MulticastUdpTransport::openRxSocket(ip::udp::socket& sock,
 }
 
 void
-MulticastUdpTransport::openTxSocket(ip::udp::socket& sock,
-                                    const ip::udp::endpoint& localEndpoint,
+MulticastUdpTransport::openTxSocket(protocol::socket& sock,
+                                    const protocol::endpoint& localEndpoint,
                                     const ndn::net::NetworkInterface* netif,
                                     bool enableLoopback)
 {
   BOOST_ASSERT(!sock.is_open());
 
   sock.open(localEndpoint.protocol());
-  sock.set_option(boost::asio::socket_base::reuse_address(true));
-  sock.set_option(ip::multicast::enable_loopback(enableLoopback));
+  sock.set_option(protocol::socket::reuse_address(true));
+  sock.set_option(boost::asio::ip::multicast::enable_loopback(enableLoopback));
 
   if (localEndpoint.address().is_v4()) {
     sock.bind(localEndpoint);
     if (!localEndpoint.address().is_unspecified())
-      sock.set_option(ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
+      sock.set_option(boost::asio::ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
   }
   else {
-    sock.set_option(ip::v6_only(true));
+    sock.set_option(boost::asio::ip::v6_only(true));
     sock.bind(localEndpoint);
     if (netif)
-      sock.set_option(ip::multicast::outbound_interface(netif->getIndex()));
+      sock.set_option(boost::asio::ip::multicast::outbound_interface(netif->getIndex()));
   }
 }
 

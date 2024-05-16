@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2021,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,7 +62,8 @@ private:
   /** \brief Serve CS information dataset.
    */
   void
-  serveInfo(ndn::mgmt::StatusDatasetContext& context) const;
+  serveInfo(const Name& topPrefix, const Interest& interest,
+            ndn::mgmt::StatusDatasetContext& context) const;
 
 public:
   static constexpr size_t ERASE_LIMIT = 256;

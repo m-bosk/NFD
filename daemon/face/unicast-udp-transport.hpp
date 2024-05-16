@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,6 @@
 
 #include "datagram-transport.hpp"
 
-#include <ndn-cxx/util/scheduler.hpp>
-
 #include <boost/asio/ip/udp.hpp>
 
 namespace nfd::face {
@@ -37,12 +35,12 @@ namespace nfd::face {
 NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Unicast>));
 
 /**
- * \brief A Transport that communicates on a unicast UDP socket.
+ * \brief A Transport that communicates on a unicast UDP socket
  */
 class UnicastUdpTransport final : public DatagramTransport<boost::asio::ip::udp, Unicast>
 {
 public:
-  UnicastUdpTransport(boost::asio::ip::udp::socket&& socket,
+  UnicastUdpTransport(protocol::socket&& socket,
                       ndn::nfd::FacePersistency persistency,
                       time::nanoseconds idleTimeout);
 
@@ -59,7 +57,7 @@ private:
 
 private:
   const time::nanoseconds m_idleTimeout;
-  ndn::scheduler::ScopedEventId m_closeIfIdleEvent;
+  scheduler::ScopedEventId m_closeIfIdleEvent;
 };
 
 } // namespace nfd::face

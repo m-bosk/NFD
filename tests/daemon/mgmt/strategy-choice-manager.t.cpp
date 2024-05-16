@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(SetNameTooLong)
   ControlResponse expectedResp;
   expectedResp.setCode(414)
               .setText("Prefix has too many components (limit is " +
-                       std::to_string(NameTree::getMaxDepth()) + ")");
+                       to_string(NameTree::getMaxDepth()) + ")");
   BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
@@ -218,13 +218,14 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
 
   for (auto i = dataset.elements_begin(); i != dataset.elements_end(); ++i) {
     ndn::nfd::StrategyChoice record(*i);
-    BOOST_TEST_INFO_SCOPE(record);
     auto found = expected.find(record.getName());
     if (found == expected.end()) {
       BOOST_ERROR("record has unexpected namespace " << record.getName());
     }
     else {
-      BOOST_TEST(record.getStrategy() == found->second);
+      BOOST_CHECK_MESSAGE(record.getStrategy() == found->second,
+        "record for " << record.getName() << " has wrong strategy " << record.getStrategy() <<
+        ", should be " << found->second);
       expected.erase(found);
     }
   }

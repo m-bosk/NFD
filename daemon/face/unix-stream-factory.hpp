@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,7 @@
 
 namespace nfd::face {
 
-/**
- * \brief Protocol factory for stream-oriented Unix sockets.
+/** \brief Protocol factory for stream-oriented Unix sockets.
  */
 class UnixStreamFactory final : public ProtocolFactory
 {
@@ -49,11 +48,11 @@ public:
    * will be created.  The second call will just retrieve the existing
    * channel.
    *
-   * \returns Always a valid pointer to a UnixStreamChannel object,
+   * \returns always a valid pointer to a UnixStreamChannel object,
    *          an exception will be thrown if the channel cannot be created.
    */
   shared_ptr<UnixStreamChannel>
-  createChannel(const std::string& socketPath);
+  createChannel(const std::string& unixSocketPath);
 
 private:
   void

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,11 +36,9 @@
 
 namespace nfd::face {
 
-namespace ip = boost::asio::ip;
+NFD_LOG_MEMBER_INIT_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Unicast>), UnicastUdpTransport);
 
-NFD_LOG_MEMBER_INIT_SPECIALIZED((DatagramTransport<ip::udp, Unicast>), UnicastUdpTransport);
-
-UnicastUdpTransport::UnicastUdpTransport(ip::udp::socket&& socket,
+UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
                                          ndn::nfd::FacePersistency persistency,
                                          time::nanoseconds idleTimeout)
   : DatagramTransport(std::move(socket))

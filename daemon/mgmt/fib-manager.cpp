@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,15 +45,16 @@ FibManager::FibManager(Fib& fib, const FaceTable& faceTable,
   , m_faceTable(faceTable)
 {
   registerCommandHandler<ndn::nfd::FibAddNextHopCommand>("add-nexthop",
-    [this] (auto&&, auto&&, auto&&... args) { addNextHop(std::forward<decltype(args)>(args)...); });
+    std::bind(&FibManager::addNextHop, this, _2, _3, _4, _5));
   registerCommandHandler<ndn::nfd::FibRemoveNextHopCommand>("remove-nexthop",
-    [this] (auto&&, auto&&, auto&&... args) { removeNextHop(std::forward<decltype(args)>(args)...); });
-  registerStatusDatasetHandler("list",
-    [this] (auto&&, auto&&, auto&&... args) { listEntries(std::forward<decltype(args)>(args)...); });
+    std::bind(&FibManager::removeNextHop, this, _2, _3, _4, _5));
+
+  registerStatusDatasetHandler("list", std::bind(&FibManager::listEntries, this, _1, _2, _3));
 }
 
 void
-FibManager::addNextHop(const Interest& interest, ControlParameters parameters,
+FibManager::addNextHop(const Name&, const Interest& interest,
+                       ControlParameters parameters,
                        const ndn::mgmt::CommandContinuation& done)
 {
   setFaceForSelfRegistration(interest, parameters);
@@ -65,7 +66,7 @@ FibManager::addNextHop(const Interest& interest, ControlParameters parameters,
     NFD_LOG_DEBUG("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost <<
                   "): FAIL prefix-too-long");
     return done(ControlResponse(414, "FIB entry prefix cannot exceed " +
-                                std::to_string(Fib::getMaxDepth()) + " components"));
+                                to_string(Fib::getMaxDepth()) + " components"));
   }
 
   Face* face = m_faceTable.get(faceId);
@@ -83,7 +84,8 @@ FibManager::addNextHop(const Interest& interest, ControlParameters parameters,
 }
 
 void
-FibManager::removeNextHop(const Interest& interest, ControlParameters parameters,
+FibManager::removeNextHop(const Name&, const Interest& interest,
+                          ControlParameters parameters,
                           const ndn::mgmt::CommandContinuation& done)
 {
   setFaceForSelfRegistration(interest, parameters);
@@ -119,7 +121,8 @@ FibManager::removeNextHop(const Interest& interest, ControlParameters parameters
 }
 
 void
-FibManager::listEntries(ndn::mgmt::StatusDatasetContext& context)
+FibManager::listEntries(const Name&, const Interest&,
+                        ndn::mgmt::StatusDatasetContext& context)
 {
   for (const auto& entry : m_fib) {
     const auto& nexthops = entry.getNextHops() |

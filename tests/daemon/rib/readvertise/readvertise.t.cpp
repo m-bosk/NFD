@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -157,11 +157,11 @@ protected:
   unique_ptr<Readvertise> readvertise;
 
 private:
-  ndn::DummyClientFace m_face;
+  ndn::util::DummyClientFace m_face;
   Rib m_rib;
 };
 
-BOOST_AUTO_TEST_SUITE(Rib)
+BOOST_AUTO_TEST_SUITE(Readvertise)
 BOOST_FIXTURE_TEST_SUITE(TestReadvertise, ReadvertiseFixture)
 
 BOOST_AUTO_TEST_CASE(AddRemoveRoute)
@@ -296,6 +296,6 @@ BOOST_AUTO_TEST_CASE(ChangeDuringRetry)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestReadvertise
-BOOST_AUTO_TEST_SUITE_END() // Rib
+BOOST_AUTO_TEST_SUITE_END() // Readvertise
 
 } // namespace nfd::tests

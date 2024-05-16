@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,10 +28,7 @@
 
 #include "name-tree-hashtable.hpp"
 
-#include <boost/operators.hpp>
 #include <boost/range/iterator_range_core.hpp>
-
-#include <functional>
 
 namespace nfd::name_tree {
 
@@ -77,27 +74,46 @@ class EnumerationImpl;
 /**
  * \brief NameTree iterator.
  */
-class Iterator : public boost::forward_iterator_helper<Iterator, const Entry>
+class Iterator
 {
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type        = const Entry;
+  using difference_type   = std::ptrdiff_t;
+  using pointer           = value_type*;
+  using reference         = value_type&;
+
   Iterator();
 
   Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref);
 
   const Entry&
-  operator*() const noexcept
+  operator*() const
   {
     BOOST_ASSERT(m_impl != nullptr);
     return *m_entry;
   }
 
+  const Entry*
+  operator->() const
+  {
+    BOOST_ASSERT(m_impl != nullptr);
+    return m_entry;
+  }
+
   Iterator&
   operator++();
 
-  friend bool
-  operator==(const Iterator& lhs, const Iterator& rhs) noexcept
+  Iterator
+  operator++(int);
+
+  bool
+  operator==(const Iterator& other) const;
+
+  bool
+  operator!=(const Iterator& other) const
   {
-    return lhs.m_entry == rhs.m_entry;
+    return !this->operator==(other);
   }
 
 private:
@@ -126,8 +142,7 @@ private:
 std::ostream&
 operator<<(std::ostream& os, const Iterator& i);
 
-/**
- * \brief Enumeration operation implementation.
+/** \brief Enumeration operation implementation.
  */
 class EnumerationImpl
 {
@@ -135,19 +150,18 @@ public:
   explicit
   EnumerationImpl(const NameTree& nt);
 
+  virtual
+  ~EnumerationImpl() = default;
+
   virtual void
   advance(Iterator& i) = 0;
-
-protected:
-  ~EnumerationImpl() = default;
 
 protected:
   const NameTree& nt;
   const Hashtable& ht;
 };
 
-/**
- * \brief Full enumeration implementation.
+/** \brief Full enumeration implementation.
  */
 class FullEnumerationImpl final : public EnumerationImpl
 {
@@ -161,11 +175,10 @@ private:
   EntrySelector m_pred;
 };
 
-/**
- * \brief Partial enumeration implementation.
+/** \brief Partial enumeration implementation.
  *
- * Iterator::m_ref should be initialized to subtree root.
- * Iterator::m_state LSB indicates whether to visit children of m_entry.
+ *  Iterator::m_ref should be initialized to subtree root.
+ *  Iterator::m_state LSB indicates whether to visit children of m_entry.
  */
 class PartialEnumerationImpl final : public EnumerationImpl
 {
@@ -179,10 +192,9 @@ private:
   EntrySubTreeSelector m_pred;
 };
 
-/**
- * \brief Partial enumeration implementation.
+/** \brief Partial enumeration implementation.
  *
- * Iterator::m_ref should be initialized to longest prefix matched entry.
+ *  Iterator::m_ref should be initialized to longest prefix matched entry.
  */
 class PrefixMatchImpl final : public EnumerationImpl
 {
@@ -197,11 +209,10 @@ private:
   EntrySelector m_pred;
 };
 
-/**
- * \brief A forward range of name tree entries.
+/** \brief A Forward Range of name tree entries.
  *
- * This type has `.begin()` and `.end()` methods which return Iterator.
- * This type is usable with range-based for loops.
+ *  This type has .begin() and .end() methods which return Iterator.
+ *  This type is usable with range-based for.
  */
 using Range = boost::iterator_range<Iterator>;
 

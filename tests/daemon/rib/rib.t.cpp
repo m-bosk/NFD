@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,6 @@ namespace nfd::tests {
 
 using rib::Route;
 
-BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_FIXTURE_TEST_SUITE(TestRib, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(Parent)
@@ -230,7 +229,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(rib.size(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(Signals)
+BOOST_AUTO_TEST_CASE(RibSignals)
 {
   rib::Rib rib;
 
@@ -293,7 +292,7 @@ BOOST_AUTO_TEST_CASE(Signals)
   BOOST_CHECK_EQUAL(nAfterEraseEntryInvocations, 1);
 }
 
-BOOST_AUTO_TEST_CASE(Print)
+BOOST_AUTO_TEST_CASE(Output)
 {
   rib::Rib rib;
 
@@ -331,6 +330,5 @@ RibEntry {
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestRib
-BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace nfd::tests

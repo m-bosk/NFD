@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2024,  Regents of the University of California,
+ * Copyright (c) 2014-2022,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,6 @@
 
 #include <pcap/pcap.h>
 
-#include <boost/asio/defer.hpp>
 #include <boost/endian/conversion.hpp>
 
 namespace nfd::face {
@@ -43,6 +42,10 @@ EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndp
   , m_srcAddress(localEndpoint.getEthernetAddress())
   , m_destAddress(remoteEndpoint)
   , m_interfaceName(localEndpoint.getName())
+  , m_hasRecentlyReceived(false)
+#ifdef _DEBUG
+  , m_nDropped(0)
+#endif
 {
   try {
     m_pcap.activate(DLT_EN10MB);
@@ -84,7 +87,7 @@ EthernetTransport::doClose()
 
   // Ensure that the Transport stays alive at least
   // until all pending handlers are dispatched
-  boost::asio::defer(getGlobalIoService(), [this] {
+  getGlobalIoService().post([this] {
     this->setState(TransportState::CLOSED);
   });
 }
@@ -133,8 +136,8 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   if (sent < 0)
     handleError("Send operation failed: " + m_pcap.getLastError());
   else if (static_cast<size_t>(sent) < buffer.size())
-    handleError("Failed to send the full frame: size=" + std::to_string(buffer.size()) +
-                " sent=" + std::to_string(sent));
+    handleError("Failed to send the full frame: size=" + to_string(buffer.size()) +
+                " sent=" + to_string(sent));
   else
     // print block size because we don't want to count the padding in buffer
     NFD_LOG_FACE_TRACE("Successfully sent: " << block.size() << " bytes");
@@ -143,8 +146,8 @@ EthernetTransport::sendPacket(const ndn::Block& block)
 void
 EthernetTransport::asyncRead()
 {
-  m_socket.async_wait(boost::asio::posix::stream_descriptor::wait_read,
-                      [this] (const auto& e) { this->handleRead(e); });
+  m_socket.async_read_some(boost::asio::null_buffers(),
+                           [this] (const auto& e, auto) { this->handleRead(e); });
 }
 
 void
@@ -179,7 +182,7 @@ EthernetTransport::handleRead(const boost::system::error_code& error)
     }
   }
 
-#ifndef NDEBUG
+#ifdef _DEBUG
   size_t nDropped = m_pcap.getNDropped();
   if (nDropped - m_nDropped > 0)
     NFD_LOG_FACE_DEBUG("Detected " << nDropped - m_nDropped << " dropped frame(s)");
