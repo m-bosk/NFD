@@ -380,6 +380,14 @@ public:
    */
   bool isSatisfied = false;
 
+  /** \brief Indicates whether this PIT entry is soft state.
+   */
+  bool isSoftState = false;
+
+  /** \brief Indicates whether this PIT entry is expired.
+   */
+  bool isExpired = false;
+
   /** \brief Data freshness period.
    *  \note This field is meaningful only if #isSatisfied is true
    */

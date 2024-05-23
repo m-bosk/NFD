@@ -139,7 +139,19 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   }
 
   // PIT insert
-  shared_ptr<pit::Entry> pitEntry = m_pit.insert(interest).first;
+  std::pair<shared_ptr<pit::Entry>, bool> pitEntryPair = m_pit.insert(interest);
+  shared_ptr<pit::Entry> pitEntry = pitEntryPair.first;
+  bool isNewEntry = pitEntryPair.second;
+  pitEntry->isExpired = false;
+
+  NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " entry is new: " << isNewEntry << "; PIT has " << m_pit.size() << " entries");
+
+  // If interest contains soft state flag, set it
+  if (interest.getIsSoftState()) {
+    pitEntry->isSoftState = true;
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress
+                  << " interest=" << interest.getName() << " is-soft-state");
+  }
 
   // detect duplicate Nonce in PIT entry
   int dnw = fw::findDuplicateNonce(*pitEntry, nonce, ingress.face);
@@ -279,8 +291,9 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
                 << (pitEntry->isSatisfied ? " satisfied" : " unsatisfied"));
 
   // Dead Nonce List insert if necessary
-  this->insertDeadNonceList(*pitEntry, nullptr);
-
+  if (!pitEntry->isSoftState || pitEntry->isExpired) {
+    this->insertDeadNonceList(*pitEntry, nullptr);
+  }
   // Increment satisfied/unsatisfied Interests counter
   if (pitEntry->isSatisfied) {
     ++m_counters.nSatisfiedInterests;
@@ -289,9 +302,13 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
     ++m_counters.nUnsatisfiedInterests;
   }
 
-  // PIT delete
-  pitEntry->expiryTimer.cancel();
-  m_pit.erase(pitEntry.get());
+  // PIT delete, but only if it's not a soft-state interest!
+  if (!pitEntry->isSoftState || pitEntry->isExpired) {
+    pitEntry->expiryTimer.cancel();
+    m_pit.erase(pitEntry.get());
+  } else {
+    NFD_LOG_DEBUG("onInterestFinalize interest=" << pitEntry->getName() << "PIT entry not deleted as is soft interest");
+  }
 }
 
 void
@@ -325,26 +342,44 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
   if (pitMatches.size() == 1) {
     auto& pitEntry = pitMatches.front();
 
-    NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
+    bool isSoft = pitEntry->isSoftState;
+    NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << "; soft state=" << isSoft);
 
-    // set PIT expiry timer to now
-    this->setExpiryTimer(pitEntry, 0_ms);
+    if (isSoft) {
+      auto now = time::steady_clock::now();
+      for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
+        NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " matched with soft interest; expiers on=" << inRecord.getExpiry() << "; now is=" << now << "; diff=" << inRecord.getExpiry() - now);
+        if (inRecord.getExpiry() < now) {
+          NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " soft interest expired");
+          this->setExpiryTimer(pitEntry, 0_ms);
+          pitEntry->isExpired = true;
+        }
+      }
+    } else {
+      // set PIT expiry timer to now
+      // This will likely also need to be adjusted
+      this->setExpiryTimer(pitEntry, 0_ms);
+    }
 
     // trigger strategy: after receive Data
     m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveData(data, ingress, pitEntry);
 
     // mark PIT satisfied
-    pitEntry->isSatisfied = true;
-    pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
+    // We need to make it unsatisfied still and keep a counter for the soft interests. Only make it satisfied if the counter runs down to 0
+    if (!isSoft || pitEntry->isExpired) {
+      pitEntry->isSatisfied = true;
+      pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
 
-    // Dead Nonce List insert if necessary (for out-record of ingress face)
-    this->insertDeadNonceList(*pitEntry, &ingress.face);
+      // Dead Nonce List insert if necessary (for out-record of ingress face)
+      this->insertDeadNonceList(*pitEntry, &ingress.face);
 
-    // delete PIT entry's out-record
-    pitEntry->deleteOutRecord(ingress.face);
+      // delete PIT entry's out-record
+      pitEntry->deleteOutRecord(ingress.face);
+    }
   }
   // when more than one PIT entry is matched, trigger strategy: before satisfy Interest,
   // and send Data to all matched out faces
+  // TODO: Add the soft interest pipeline here if needed
   else {
     std::set<Face*> pendingDownstreams;
     auto now = time::steady_clock::now();
