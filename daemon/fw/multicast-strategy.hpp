@@ -49,10 +49,10 @@ public: // triggers
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
-  onInterestLoop(const Interest& interest, const FaceEndpoint& ingress) override
-  {
-    // do nothing
-  }
+  onInterestLoop(const Interest& interest, const FaceEndpoint& ingress) override;
+  // {
+  //   // do nothing
+  // }
 
   void
   afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry) override;

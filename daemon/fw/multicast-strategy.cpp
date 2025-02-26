@@ -86,6 +86,12 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
 }
 
 void
+MulticastStrategy::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
+{
+  NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " name=" << interest.getName() << " nonce=" << interest.getNonce() << " ignoring duplicate interest");
+}
+
+void
 MulticastStrategy::afterNewNextHop(const fib::NextHop& nextHop,
                                    const shared_ptr<pit::Entry>& pitEntry)
 {
