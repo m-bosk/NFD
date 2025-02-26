@@ -126,6 +126,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   bool hasDuplicateNonceInDnl = m_deadNonceList.has(interest.getName(), nonce);
   if (hasDuplicateNonceInDnl) {
     // go to Interest loop pipeline
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " is-dead");
     this->onInterestLoop(interest, ingress);
     return;
   }
@@ -161,6 +162,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     hasDuplicateNonceInPit = hasDuplicateNonceInPit && !(dnw & fw::DUPLICATE_NONCE_IN_SAME);
   }
   if (hasDuplicateNonceInPit) {
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " has-duplicate");
     // go to Interest loop pipeline
     this->onInterestLoop(interest, ingress);
     return;
@@ -292,6 +294,7 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
 
   // Dead Nonce List insert if necessary
   if (!pitEntry->isSoftState || pitEntry->isExpired) {
+    NFD_LOG_DEBUG("onInterestFinalize interest=" << pitEntry->getName() << " will be inserted into dead nonce list");
     this->insertDeadNonceList(*pitEntry, nullptr);
   }
   // Increment satisfied/unsatisfied Interests counter
@@ -371,7 +374,12 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
       pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
 
       // Dead Nonce List insert if necessary (for out-record of ingress face)
-      this->insertDeadNonceList(*pitEntry, &ingress.face);
+      if (m_strategyChoice.findEffectiveStrategy(*pitEntry).getInstanceName().equals(Name("/localhost/nfd/strategy/multipath").appendVersion(0))) {
+        NFD_LOG_DEBUG("onIncomingData interest=" << pitEntry->getName() << " using strategy=" << m_strategyChoice.findEffectiveStrategy(*pitEntry).getInstanceName() << " will not be inserted into dead nonce list...");
+      } else {
+        NFD_LOG_DEBUG("onIncomingData interest=" << pitEntry->getName() << " will be inserted into dead nonce list");
+        this->insertDeadNonceList(*pitEntry, &ingress.face);
+      }
 
       // delete PIT entry's out-record
       pitEntry->deleteOutRecord(ingress.face);
@@ -405,6 +413,7 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
       pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
 
       // Dead Nonce List insert if necessary (for out-record of ingress face)
+      NFD_LOG_DEBUG("onIncomingData multiple PIT interest=" << pitEntry->getName() << " will be inserted into dead nonce list");
       this->insertDeadNonceList(*pitEntry, &ingress.face);
 
       // clear PIT entry's in and out records
