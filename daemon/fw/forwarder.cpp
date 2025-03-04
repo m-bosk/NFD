@@ -165,7 +165,11 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " has-duplicate");
     // go to Interest loop pipeline
     this->onInterestLoop(interest, ingress);
-    return;
+    if (!m_strategyChoice.findEffectiveStrategy(*pitEntry).getInstanceName().getPrefix(-1).equals(Name("/localhost/nfd/strategy/multipath"))) {
+      return;
+    } else {
+      NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " has-duplicate but uses multipath strategy, continuing...");
+    }
   }
 
   // is pending?
@@ -374,7 +378,7 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
       pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
 
       // Dead Nonce List insert if necessary (for out-record of ingress face)
-      if (m_strategyChoice.findEffectiveStrategy(*pitEntry).getInstanceName().equals(Name("/localhost/nfd/strategy/multipath").appendVersion(0))) {
+      if (m_strategyChoice.findEffectiveStrategy(*pitEntry).getInstanceName().getPrefix(-1).equals(Name("/localhost/nfd/strategy/multipath"))) {
         NFD_LOG_DEBUG("onIncomingData interest=" << pitEntry->getName() << " using strategy=" << m_strategyChoice.findEffectiveStrategy(*pitEntry).getInstanceName() << " will not be inserted into dead nonce list...");
       } else {
         NFD_LOG_DEBUG("onIncomingData interest=" << pitEntry->getName() << " will be inserted into dead nonce list");
