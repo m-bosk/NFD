@@ -279,6 +279,7 @@ Strategy::sendDataToAll(const Data& data, const shared_ptr<pit::Entry>& pitEntry
 
   // remember pending downstreams
   for (const auto& inRecord : pitEntry->getInRecords()) {
+    NFD_LOG_TRACE("sendDataToAll name=" << inRecord.getInterest().getName() << " faceId=" << inRecord.getFace().getId());
     if (inRecord.getExpiry() > now) {
       if (inRecord.getFace().getId() == inFace.getId() &&
           inRecord.getFace().getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
