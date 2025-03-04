@@ -342,6 +342,28 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
     return;
   }
 
+  Data foundData = data;
+
+  auto& interest = pitMatches.front()->getInterest();
+
+  m_cs.find(interest,
+    [&](const Interest&, const Data& internalData) {
+      NFD_LOG_DEBUG("onIncomingData data=" << internalData.getName() << " has something present in content store.");
+      foundData = internalData; // Store the matched data
+    },
+    [](const Interest& internalInterest) { // Miss callback
+      NFD_LOG_DEBUG("onIncomingData data=" << internalInterest.getName() << " not present in content store before.");
+    }
+  );
+
+  if (foundData != data) {
+    if (data.getSignatureValue() == foundData.getSignatureValue()) {
+      NFD_LOG_DEBUG("onIncomingData data=" << foundData.getName() << " received was already in content store. We should ignore it!");
+    } else {
+      NFD_LOG_DEBUG("onIncomingData data=" << foundData.getName() << " not seen before, continue.");
+    }
+  }
+
   // CS insert
   m_cs.insert(data);
 
