@@ -257,7 +257,7 @@ Strategy::sendData(const Data& data, Face& egress, const shared_ptr<pit::Entry>&
   // delete the PIT entry's in-record based on egress,
   // since the Data is sent to the face from which the Interest was received
   if (!pitEntry->isSoftState || pitEntry->isExpired) {
-    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired);
+    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " deleting inRecord");
     pitEntry->deleteInRecord(inRecord);
   } else {
     NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " was soft state. Not deleting inRecord");
