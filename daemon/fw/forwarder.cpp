@@ -55,6 +55,7 @@ Forwarder::Forwarder(FaceTable& faceTable)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
   , m_strategyChoice(*this)
+  , m_observedData(20)
 {
   m_faceTable.afterAdd.connect([this] (const Face& face) {
     face.afterReceiveInterest.connect(
@@ -247,21 +248,66 @@ void
 Forwarder::onContentStoreHit(const Interest& interest, const FaceEndpoint& ingress,
                              const shared_ptr<pit::Entry>& pitEntry, const Data& data)
 {
-  NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName() << " nonce=" << interest.getNonce());
+  NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName() << " nonce=" << interest.getNonce() << (pitEntry->isSoftState ? " IS soft-state" : " is NOT soft-state"));
   ++m_counters.nCsHits;
 
   data.setTag(make_shared<lp::IncomingFaceIdTag>(face::FACEID_CONTENT_STORE));
   data.setTag(interest.getTag<lp::PitToken>());
   // FIXME Should we lookup PIT for other Interests that also match the data?
 
-  pitEntry->isSatisfied = true;
-  pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
+  if (pitEntry->isSoftState && !pitEntry->isExpired) {
+    NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName() << " nonce=" << interest.getNonce() << " is soft-state and not expired. Keeping interest unsatisfied.");
+    // TODO: Do we have to check for expiry here????
+  } else {
+    NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName() << " nonce=" << interest.getNonce() << " is now satisfied.");
+    pitEntry->isSatisfied = true;
+    pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();  
 
-  // set PIT expiry timer to now
-  this->setExpiryTimer(pitEntry, 0_ms);
+    // set PIT expiry timer to now
+    this->setExpiryTimer(pitEntry, 0_ms);
+  }
 
   // dispatch to strategy: after Content Store hit
   m_strategyChoice.findEffectiveStrategy(*pitEntry).afterContentStoreHit(data, ingress, pitEntry);
+
+
+  // We've hit the content store now. But if it's LL interest, then we also need to adequately add everything for the pitEntry!!!
+  if (pitEntry->isSoftState) {
+    NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName() << " nonce=" << interest.getNonce() << " is soft-state. Need to refresh the pitEntry.");
+
+    // attach HopLimit if configured and not present in Interest
+    if (m_config.defaultHopLimit > 0 && !interest.getHopLimit()) {
+      const_cast<Interest&>(interest).setHopLimit(m_config.defaultHopLimit);
+    }
+
+    // insert in-record
+    pitEntry->insertOrUpdateInRecord(ingress.face, interest);
+
+    // set PIT expiry timer to the time that the last PIT in-record expires
+    auto lastExpiring = std::max_element(pitEntry->in_begin(), pitEntry->in_end(),
+                                        [] (const auto& a, const auto& b) {
+                                          return a.getExpiry() < b.getExpiry();
+                                        });
+    auto lastExpiryFromNow = lastExpiring->getExpiry() - time::steady_clock::now();
+    this->setExpiryTimer(pitEntry, time::duration_cast<time::milliseconds>(lastExpiryFromNow));
+
+    // has NextHopFaceId?
+    auto nextHopTag = interest.getTag<lp::NextHopFaceIdTag>();
+    if (nextHopTag != nullptr) {
+      // chosen NextHop face exists?
+      Face* nextHopFace = m_faceTable.get(*nextHopTag);
+      if (nextHopFace != nullptr) {
+        NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName() << " soft-state nonce=" << interest.getNonce() << " nexthop-faceid=" << nextHopFace->getId());
+        // go to outgoing Interest pipeline
+        // scope control is unnecessary, because privileged app explicitly wants to forward
+        this->onOutgoingInterest(interest, *nextHopFace, pitEntry);
+      }
+      return;
+    }
+
+    // dispatch to strategy: after receive Interest
+    m_strategyChoice.findEffectiveStrategy(*pitEntry).afterReceiveInterest(interest, FaceEndpoint(ingress.face), pitEntry);
+  }
 }
 
 pit::OutRecord*
@@ -334,6 +380,11 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
     return;
   }
 
+  if (m_observedData.exists(data.getSignatureValue())) {
+    NFD_LOG_DEBUG("onIncomingData data=" << data.getName() << " signature=" << data.getSignatureValue() << " seen before, ignoring...");
+    return;
+  }
+
   // PIT match
   pit::DataMatchResult pitMatches = m_pit.findAllDataMatches(data);
   if (pitMatches.size() == 0) {
@@ -342,37 +393,16 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
     return;
   }
 
-  Data foundData = data;
-
-  auto& interest = pitMatches.front()->getInterest();
-
-  m_cs.find(interest,
-    [&](const Interest&, const Data& internalData) {
-      NFD_LOG_DEBUG("onIncomingData data=" << internalData.getName() << " has something present in content store.");
-      foundData = internalData; // Store the matched data
-    },
-    [](const Interest& internalInterest) { // Miss callback
-      NFD_LOG_DEBUG("onIncomingData data=" << internalInterest.getName() << " not present in content store before.");
-    }
-  );
-
-  if (foundData != data) {
-    if (data.getSignatureValue() == foundData.getSignatureValue()) {
-      NFD_LOG_DEBUG("onIncomingData data=" << foundData.getName() << " received was already in content store. We should ignore it!");
-    } else {
-      NFD_LOG_DEBUG("onIncomingData data=" << foundData.getName() << " not seen before, continue.");
-    }
-  }
-
   // CS insert
   m_cs.insert(data);
+  m_observedData.push(data.getSignatureValue());
 
   // when only one PIT entry is matched, trigger strategy: after receive Data
   if (pitMatches.size() == 1) {
     auto& pitEntry = pitMatches.front();
 
     bool isSoft = pitEntry->isSoftState;
-    NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << "; soft state=" << isSoft);
+    NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << "; soft state=" << isSoft << " with number of inRecords=" << pitEntry->getInRecords().size());
 
     if (isSoft) {
       auto now = time::steady_clock::now();
@@ -470,6 +500,7 @@ Forwarder::onDataUnsolicited(const Data& data, const FaceEndpoint& ingress)
   if (decision == fw::UnsolicitedDataDecision::CACHE) {
     // CS insert
     m_cs.insert(data, true);
+    m_observedData.push(data.getSignatureValue());
   }
 }
 

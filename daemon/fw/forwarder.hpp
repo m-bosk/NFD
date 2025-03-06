@@ -38,6 +38,7 @@
 #include "table/strategy-choice.hpp"
 #include "table/dead-nonce-list.hpp"
 #include "table/network-region-table.hpp"
+#include "multipath-duplicate-detection.hpp"
 
 namespace nfd {
 
@@ -251,6 +252,8 @@ private:
   StrategyChoice     m_strategyChoice;
   DeadNonceList      m_deadNonceList;
   NetworkRegionTable m_networkRegionTable;
+
+  MultipathDuplicateDetection m_observedData;
 
   // allow Strategy (base class) to enter pipelines
   friend ::nfd::fw::Strategy;
