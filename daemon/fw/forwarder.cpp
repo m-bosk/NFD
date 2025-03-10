@@ -406,13 +406,26 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
 
     if (isSoft) {
       auto now = time::steady_clock::now();
-      for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
-        NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " matched with soft interest; expiers on=" << inRecord.getExpiry() << "; now is=" << now << "; diff=" << inRecord.getExpiry() - now);
-        if (inRecord.getExpiry() < now) {
-          NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " soft interest expired");
-          this->setExpiryTimer(pitEntry, 0_ms);
-          pitEntry->isExpired = true;
+      bool isAnyValid = false;
+      std::list<decltype(pitEntry->in_begin())> toDelete;
+      for (auto iter = pitEntry->in_begin(); iter!= pitEntry->in_end(); ++iter) {
+        auto& inRecord = *iter;
+        NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " matched with soft interest; expiers on=" << inRecord.getExpiry() << "; now is=" << now << "; diff=" << inRecord.getExpiry() - now << "; in=" << inRecord.getFace().getId());
+        if (inRecord.getExpiry() >= now) {
+          isAnyValid = true;
+        } else {
+          NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << "in=" << inRecord.getFace().getId() << " expired, will inRecord...");
+          toDelete.push_back(iter);
+          // pitEntry->deleteInRecord(iter);
         }
+      }
+      for (auto iter : toDelete) {
+        pitEntry->deleteInRecord(iter);  // Delete safely
+      }
+      if (!isAnyValid) {
+        NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " soft interest expired");
+        this->setExpiryTimer(pitEntry, 0_ms);
+        pitEntry->isExpired = true;
       }
     } else {
       // set PIT expiry timer to now
