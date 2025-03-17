@@ -93,7 +93,8 @@ Nfd::initialize()
     // only one auto-detection procedure is triggered
     m_reloadConfigEvent = getScheduler().schedule(5_s, [this] {
       NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
-      reloadConfigFileFaceSection();
+      NFD_LOG_INFO("Face section won't be reloaded as this implementation is aimed to run in a more static way!");
+      // reloadConfigFileFaceSection();
     });
   });
 }
