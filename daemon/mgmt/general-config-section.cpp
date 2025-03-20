@@ -28,6 +28,8 @@
 
 namespace nfd::general {
 
+bool enableNetChangeDetection = true;
+
 static void
 onConfig(const ConfigSection& section, bool isDryRun, const std::string&)
 {
@@ -39,7 +41,6 @@ onConfig(const ConfigSection& section, bool isDryRun, const std::string&)
 
   std::string user;
   std::string group;
-
   for (const auto& i : section) {
     if (i.first == "user") {
       try {
@@ -62,6 +63,8 @@ onConfig(const ConfigSection& section, bool isDryRun, const std::string&)
       catch (const boost::property_tree::ptree_error&) {
         NDN_THROW(ConfigFile::Error("Invalid value for 'group' in section 'general'"));
       }
+    } else if (i.first == "network_change_detection") {
+      enableNetChangeDetection = ConfigFile::parseYesNo(i, "general");
     }
   }
 
