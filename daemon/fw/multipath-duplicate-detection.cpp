@@ -27,23 +27,24 @@
 
 namespace nfd {
 
-    // MultipathDuplicateDetection::MultipathDuplicateDetection(size_t size) {
-    //     max_size = size;
-    // }
-
     void MultipathDuplicateDetection::push(ndn::Block val) {
+        if (capacity <= 0) return;
         if (exists(val)) return;
-
-        if (dq.size() == max_size) {
-            dq.pop_front();
+        std::string strVal = std::string(val.begin(), val.end());
+        
+        if (qe.size() == capacity) {
+            std::string popped = qe.front();
+            qe.pop();
+            st.erase(popped);
         }
-
-        dq.push_back(val);
+        qe.push(strVal);
+        st.insert(strVal);
     }
 
     bool MultipathDuplicateDetection::exists(ndn::Block val) const {
-        for (const auto& item : dq) {
-            if (item == val) return true;
+        if (capacity > 0) {
+            std::string strVal = std::string(val.begin(), val.end());
+            return st.find(strVal) != st.end();
         }
         return false;
     }

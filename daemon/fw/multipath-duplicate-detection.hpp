@@ -27,22 +27,26 @@
 #define NFD_DAEMON_FW_MULTIPATH_DUPLICATE_DETECTION_HPP
 
 #include <iostream>
-#include <deque>
+#include <queue>
+#include <unordered_set>
 #include <ndn-cxx/encoding/block.hpp>
 
 namespace nfd {
 
     /**
      * \brief Stores max_size elements and enables verification if an element already exists within the structure.
+     * Uses a std::queue to monitor the order of packets and allow last max_size packets to be stored.
+     * Uses a std::unordered_set for O(1) lookup of whether an element is present in the structure
      */
     class MultipathDuplicateDetection
     {
         private:
-            size_t max_size;
-            std::deque<ndn::Block> dq;
+            size_t capacity;
+            std::queue<std::string> qe;
+            std::unordered_set<std::string> st;
 
         public:
-            MultipathDuplicateDetection(size_t size) : max_size(size) {}
+            MultipathDuplicateDetection(std::size_t size) : capacity(size), st() {}
             void push(ndn::Block val);
             bool exists(ndn::Block val) const;
 

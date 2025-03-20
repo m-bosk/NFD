@@ -235,6 +235,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
     /// Initial value of HopLimit that should be added to Interests that don't have one.
     /// A value of zero disables the feature.
     uint8_t defaultHopLimit = 0;
+    uint16_t duplicateMemoryCapacity = 0;
   };
   Config m_config;
 

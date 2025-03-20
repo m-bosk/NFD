@@ -55,7 +55,7 @@ Forwarder::Forwarder(FaceTable& faceTable)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
   , m_strategyChoice(*this)
-  , m_observedData(20)
+  , m_observedData(m_config.duplicateMemoryCapacity)
 {
   m_faceTable.afterAdd.connect([this] (const Face& face) {
     face.afterReceiveInterest.connect(
@@ -729,8 +729,9 @@ Forwarder::processConfig(const ConfigSection& configSection, bool isDryRun, cons
     const std::string& key = pair.first;
     if (key == "default_hop_limit") {
       config.defaultHopLimit = ConfigFile::parseNumber<uint8_t>(pair, CFG_FORWARDER);
-    }
-    else {
+    } else if (key == "duplicate_memory_capacity") {
+      config.duplicateMemoryCapacity = ConfigFile::parseNumber<uint16_t>(pair, CFG_FORWARDER);
+    } else {
       NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_FORWARDER + "." + key));
     }
   }
