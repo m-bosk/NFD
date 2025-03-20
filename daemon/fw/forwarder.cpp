@@ -55,7 +55,7 @@ Forwarder::Forwarder(FaceTable& faceTable)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
   , m_strategyChoice(*this)
-  , m_observedData(m_config.duplicateMemoryCapacity)
+  , m_observedData()
 {
   m_faceTable.afterAdd.connect([this] (const Face& face) {
     face.afterReceiveInterest.connect(
@@ -731,6 +731,8 @@ Forwarder::processConfig(const ConfigSection& configSection, bool isDryRun, cons
       config.defaultHopLimit = ConfigFile::parseNumber<uint8_t>(pair, CFG_FORWARDER);
     } else if (key == "duplicate_memory_capacity") {
       config.duplicateMemoryCapacity = ConfigFile::parseNumber<uint16_t>(pair, CFG_FORWARDER);
+      NFD_LOG_INFO("Duplicate detection with capacity of " << config.duplicateMemoryCapacity);
+      m_observedData.init(config.duplicateMemoryCapacity);
     } else {
       NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_FORWARDER + "." + key));
     }

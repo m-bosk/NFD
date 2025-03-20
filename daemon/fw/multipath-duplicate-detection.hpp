@@ -41,12 +41,13 @@ namespace nfd {
     class MultipathDuplicateDetection
     {
         private:
-            size_t capacity;
+            size_t capacity = 0;
             std::queue<std::string> qe;
             std::unordered_set<std::string> st;
 
         public:
-            MultipathDuplicateDetection(std::size_t size) : capacity(size), st() {}
+            MultipathDuplicateDetection() : st() {}
+            void init(size_t size);
             void push(ndn::Block val);
             bool exists(ndn::Block val) const;
 

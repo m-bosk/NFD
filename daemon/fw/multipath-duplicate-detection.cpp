@@ -24,10 +24,17 @@
  */
 
 #include "multipath-duplicate-detection.hpp"
+#include "common/logger.hpp"
 
 namespace nfd {
+    NFD_LOG_INIT(MpathDuplDetect);
+
+    void MultipathDuplicateDetection::init(size_t size) {
+        capacity = size;
+    }
 
     void MultipathDuplicateDetection::push(ndn::Block val) {
+        NFD_LOG_DEBUG("Pushing into duplicate detection data structure with capacity of " << capacity << " now filled with " << qe.size() << " packets.");
         if (capacity <= 0) return;
         if (exists(val)) return;
         std::string strVal = std::string(val.begin(), val.end());
@@ -42,6 +49,7 @@ namespace nfd {
     }
 
     bool MultipathDuplicateDetection::exists(ndn::Block val) const {
+        NFD_LOG_DEBUG("Checking if packet in duplicate detection data structure with capacity of " << capacity << " now filled with " << qe.size() << " packets.");
         if (capacity > 0) {
             std::string strVal = std::string(val.begin(), val.end());
             return st.find(strVal) != st.end();
