@@ -80,15 +80,13 @@ EthernetTransport::doClose()
     boost::system::error_code error;
     NFD_LOG_DEBUG("Cancelling all outstanding operations for face " << m_interfaceName);
     m_socket.cancel(error);
-    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - part 1");
+    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName);
     m_socket.close(error);
   }
-  NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - part 2");
   std::thread([this] {
-    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - part 2a - Close PCAP now");
+    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - Close PCAP now");
     m_pcap.close();
-    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - part 2b - PCAP closed");
-    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - part 3");
+    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - PCAP closed");
     // Ensure that the Transport stays alive at least
     // until all pending handlers are dispatched
     boost::asio::defer(getGlobalIoService(), [this] {
