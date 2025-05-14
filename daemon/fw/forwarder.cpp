@@ -99,7 +99,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
 
   // drop if HopLimit zero, decrement otherwise (if present)
   if (hopLimit) {
-    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName()
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName()
                   << " nonce=" << nonce << " hop-limit=" << static_cast<unsigned>(*hopLimit));
     if (*hopLimit == 0) {
       ++ingress.face.getCounters().nInHopLimitZero;
@@ -109,7 +109,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     const_cast<Interest&>(interest).setHopLimit(*hopLimit - 1);
   }
   else {
-    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName()
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName()
                   << " nonce=" << nonce);
   }
 
@@ -117,7 +117,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   bool isViolatingLocalhost = ingress.face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
                               scope_prefix::LOCALHOST.isPrefixOf(interest.getName());
   if (isViolatingLocalhost) {
-    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName()
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName()
                   << " nonce=" << nonce << " violates /localhost");
     // drop
     return;
@@ -127,7 +127,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   bool hasDuplicateNonceInDnl = m_deadNonceList.has(interest.getName(), nonce);
   if (hasDuplicateNonceInDnl) {
     // go to Interest loop pipeline
-    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " is-dead");
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName() << " is-dead");
     this->onInterestLoop(interest, ingress);
     return;
   }
@@ -135,7 +135,7 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   // strip forwarding hint if Interest has reached producer region
   if (!interest.getForwardingHint().empty() &&
       m_networkRegionTable.isInProducerRegion(interest.getForwardingHint())) {
-    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName()
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName()
                   << " nonce=" << nonce << " reaching-producer-region");
     const_cast<Interest&>(interest).setForwardingHint({});
   }
@@ -146,13 +146,12 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
   bool isNewEntry = pitEntryPair.second;
   pitEntry->isExpired = false;
 
-  NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " entry is new: " << isNewEntry << "; PIT has " << m_pit.size() << " entries");
+  NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName() << " entry is new: " << isNewEntry << "; PIT has " << m_pit.size() << " entries");
 
   // If interest contains soft state flag, set it
   if (interest.getIsSoftState()) {
     pitEntry->isSoftState = true;
-    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress
-                  << " interest=" << interest.getName() << " is-soft-state");
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName() << " is-soft-state");
   }
 
   // detect duplicate Nonce in PIT entry
@@ -163,13 +162,13 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     hasDuplicateNonceInPit = hasDuplicateNonceInPit && !(dnw & fw::DUPLICATE_NONCE_IN_SAME);
   }
   if (hasDuplicateNonceInPit) {
-    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " has-duplicate");
+    NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName() << " has-duplicate");
     // go to Interest loop pipeline
     this->onInterestLoop(interest, ingress);
     if (!m_strategyChoice.findEffectiveStrategy(*pitEntry).getInstanceName().getPrefix(-1).equals(Name("/localhost/nfd/strategy/multipath"))) {
       return;
     } else {
-      NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << " interest=" << interest.getName() << " has-duplicate but uses multipath strategy, continuing...");
+      NFD_LOG_DEBUG("onIncomingInterest in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName() << " has-duplicate but uses multipath strategy, continuing...");
     }
   }
 
@@ -189,13 +188,11 @@ Forwarder::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
 {
   // if multi-access or ad hoc face, drop
   if (ingress.face.getLinkType() != ndn::nfd::LINK_TYPE_POINT_TO_POINT) {
-    NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " interest=" << interest.getName()
-                  << " nonce=" << interest.getNonce() << " drop");
+    NFD_LOG_DEBUG("onInterestLoop in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName() << " nonce=" << interest.getNonce() << " drop");
     return;
   }
 
-  NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " interest=" << interest.getName()
-                << " nonce=" << interest.getNonce());
+  NFD_LOG_DEBUG("onInterestLoop in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; interest=" << interest.getName() << " nonce=" << interest.getNonce());
 
   // leave loop handling up to the strategy (e.g., whether to reply with a Nack)
   m_strategyChoice.findEffectiveStrategy(interest.getName()).onInterestLoop(interest, ingress);
@@ -369,13 +366,13 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
 {
   data.setTag(make_shared<lp::IncomingFaceIdTag>(ingress.face.getId()));
   ++m_counters.nInData;
-  NFD_LOG_DEBUG("onIncomingData in=" << ingress << " data=" << data.getName());
+  NFD_LOG_DEBUG("onIncomingData in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; data=" << data.getName());
 
   // /localhost scope control
   bool isViolatingLocalhost = ingress.face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
                               scope_prefix::LOCALHOST.isPrefixOf(data.getName());
   if (isViolatingLocalhost) {
-    NFD_LOG_DEBUG("onIncomingData in=" << ingress << " data=" << data.getName() << " violates /localhost");
+    NFD_LOG_DEBUG("onIncomingData in=" << ingress << "; facePrio=" << ingress.face.getPriority() << "; data=" << data.getName() << " violates /localhost");
     // drop
     return;
   }
@@ -410,11 +407,11 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
       std::list<decltype(pitEntry->in_begin())> toDelete;
       for (auto iter = pitEntry->in_begin(); iter!= pitEntry->in_end(); ++iter) {
         auto& inRecord = *iter;
-        NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " matched with soft interest; expiers on=" << inRecord.getExpiry() << "; now is=" << now << "; diff=" << inRecord.getExpiry() - now << "; in=" << inRecord.getFace().getId());
+        NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " matched with soft interest; expiers on=" << inRecord.getExpiry() << "; now is=" << now << "; diff=" << inRecord.getExpiry() - now << "; in=" << inRecord.getFace().getId() << "; facePrio=" << inRecord.getFace().getPriority());
         if (inRecord.getExpiry() >= now) {
           isAnyValid = true;
         } else {
-          NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << "in=" << inRecord.getFace().getId() << " expired, will inRecord...");
+          NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << "in=" << inRecord.getFace().getId() << "; facePrio=" << inRecord.getFace().getPriority() << " expired, will inRecord...");
           toDelete.push_back(iter);
           // pitEntry->deleteInRecord(iter);
         }
