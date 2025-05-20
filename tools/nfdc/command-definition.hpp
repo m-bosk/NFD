@@ -113,6 +113,13 @@ enum class ArgValueType {
    * The argument appears in CommandArguments as ndn::nfd::Priority.
    */
   PRIORITY,
+  
+  /**
+   * \brief GroupId.
+   *
+   * The argument appears in CommandArguments as ndn::nfd::GroupId.
+   */
+  GROUP_ID,
 };
 
 std::ostream&

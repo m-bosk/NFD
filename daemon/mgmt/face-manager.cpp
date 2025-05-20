@@ -120,6 +120,9 @@ FaceManager::createFace(const ControlParameters& parameters,
   if (parameters.hasPriority()) {
     faceParams.priority = parameters.getPriority();
   }
+  if (parameters.hasGroupId()) {
+    faceParams.groupId = parameters.getGroupId();
+  }
   faceParams.persistency = parameters.getFacePersistency();
   if (parameters.hasBaseCongestionMarkingInterval()) {
     faceParams.baseCongestionMarkingInterval = parameters.getBaseCongestionMarkingInterval();
@@ -178,6 +181,7 @@ makeUpdateFaceResponse(const Face& face)
   ControlParameters params;
   params.setFaceId(face.getId())
         .setPriority(face.getPriority())
+        .setGroupId(face.getGroupId())
         .setFacePersistency(face.getPersistency());
   copyMtu(face, params);
 
@@ -298,6 +302,14 @@ FaceManager::updateFace(const Interest& interest,
       response.setPriority(parameters.getPriority());
   }
 
+  if (parameters.hasGroupId() &&
+      face->getGroupId() != parameters.getGroupId() &&
+      !face->getTransport()->canChangeGroupId()) {
+      NFD_LOG_TRACE("cannot change face groupId");
+      areParamsValid = false;
+      response.setGroupId(parameters.getGroupId());
+  }
+
   if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       face->getScope() != ndn::nfd::FACE_SCOPE_LOCAL) {
@@ -339,6 +351,9 @@ FaceManager::updateFace(const Interest& interest,
   if (parameters.hasPriority()) {
     face->setPriority(parameters.getPriority());
   }
+  if (parameters.hasGroupId()) {
+    face->setGroupId(parameters.getGroupId());
+  } 
   if (parameters.hasFacePersistency()) {
     face->setPersistency(parameters.getFacePersistency());
   }
@@ -367,6 +382,7 @@ copyFaceProperties(const Face& face, T& to)
 {
   to.setFaceId(face.getId())
     .setPriority(face.getPriority())
+    .setGroupId(face.getGroupId())
     .setRemoteUri(face.getRemoteUri().toString())
     .setLocalUri(face.getLocalUri().toString())
     .setFaceScope(face.getScope())
@@ -451,6 +467,11 @@ matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face)
 
   if (filter.hasPriority() &&
       filter.getPriority() != face.getPriority()) {
+    return false;
+  }
+
+  if (filter.hasGroupId() &&
+      filter.getGroupId() != face.getGroupId()) {
     return false;
   }
 

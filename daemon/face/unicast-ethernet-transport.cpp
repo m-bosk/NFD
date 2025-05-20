@@ -71,6 +71,12 @@ UnicastEthernetTransport::canChangePriority() const noexcept
 }
 
 bool
+UnicastEthernetTransport::canChangeGroupId() const noexcept
+{
+  return false; // TODO: Likely change
+}
+
+bool
 UnicastEthernetTransport::canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const
 {
   return true;

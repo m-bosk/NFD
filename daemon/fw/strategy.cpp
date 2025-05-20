@@ -32,6 +32,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace nfd::fw {
 
@@ -277,6 +278,9 @@ Strategy::sendDataToAll(const Data& data, const shared_ptr<pit::Entry>& pitEntry
   std::set<Face*> pendingDownstreams;
   auto now = time::steady_clock::now();
 
+  std::unordered_map<uint64_t, uint64_t> groupToPrio;
+  std::unordered_map<uint64_t, Face*> groupToDownstream;
+
   // remember pending downstreams
   for (const auto& inRecord : pitEntry->getInRecords()) {
     NFD_LOG_TRACE("sendDataToAll name=" << inRecord.getInterest().getName() << " faceId=" << inRecord.getFace().getId());
@@ -285,8 +289,29 @@ Strategy::sendDataToAll(const Data& data, const shared_ptr<pit::Entry>& pitEntry
           inRecord.getFace().getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
         continue;
       }
-      pendingDownstreams.emplace(&inRecord.getFace());
+      if (inRecord.getFace().getGroupId() != ndn::nfd::INVALID_FACE_GROUP_ID) {
+        uint64_t groupId = inRecord.getFace().getGroupId();
+        if (groupId == inFace.getGroupId()) {
+          continue;
+        }
+        if (groupToPrio.find(groupId) != groupToPrio.end()) {
+          if (inRecord.getFace().getPriority() > groupToPrio[groupId]) {
+            groupToPrio[groupId] = inRecord.getFace().getPriority();
+            groupToDownstream[groupId] = &inRecord.getFace();
+          }
+        } else {
+          groupToPrio[groupId] = inRecord.getFace().getPriority();
+          groupToDownstream[groupId] = &inRecord.getFace();
+        }
+      } else {
+        pendingDownstreams.emplace(&inRecord.getFace());
+      }
+      NFD_LOG_DEBUG("TESTING STRATEGY: Deciding where to forward data for name=" << inRecord.getInterest().getName() << ". Selected - faceId=" << inRecord.getFace().getId() << "; prio=" << inRecord.getFace().getPriority() << "; group-id=" << inRecord.getFace().getGroupId());
     }
+  }
+
+  for (const auto& downstreamPair : groupToDownstream) {
+    pendingDownstreams.emplace(downstreamPair.second);
   }
 
   for (const auto& pendingDownstream : pendingDownstreams) {

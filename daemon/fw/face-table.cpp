@@ -78,6 +78,7 @@ FaceTable::addImpl(shared_ptr<Face> facePtr, FaceId faceId)
 
   NFD_LOG_INFO("Added face id=" << faceId <<
                " priority=" << face.getPriority() <<
+               " groupId=" << face.getGroupId() <<
                " remote=" << face.getRemoteUri() <<
                " local=" << face.getLocalUri());
 
@@ -100,6 +101,7 @@ FaceTable::remove(FaceId faceId)
 
   NFD_LOG_INFO("Removed face id=" << faceId <<
                " priority=" << face->getPriority() <<
+               " groupId=" << face->getGroupId() <<
                " remote=" << face->getRemoteUri() <<
                " local=" << face->getLocalUri());
 

@@ -51,6 +51,9 @@ protected:
   canChangePriority() const noexcept override final;
 
   bool
+  canChangeGroupId() const noexcept override final;
+
+  bool
   canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const final;
 
   void

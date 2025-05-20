@@ -208,6 +208,24 @@ public: // properties
   }
 
   /**
+   * \brief Returns the face group id.
+   */
+  uint64_t
+  getGroupId() const
+  {
+    return m_groupId;
+  }
+
+  /**
+   * \brief Sets the face group id.
+   */
+  void
+  setGroupId(const uint64_t groupId) noexcept
+  {
+    m_groupId = groupId;
+  }
+
+  /**
    * \brief Returns the face priority.
    */
   const InterestPriority&
@@ -351,6 +369,7 @@ private:
   unique_ptr<Transport> m_transport;
   FaceCounters m_counters;
   weak_ptr<Channel> m_channel;
+  uint64_t m_groupId;
 };
 
 std::ostream&

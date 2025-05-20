@@ -200,6 +200,11 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
                                                          params.persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
   face->setPriority(params.priority);
+  if (params.groupId.has_value()) {
+    face->setGroupId(*params.groupId);
+  } else {
+    face->setGroupId(ndn::nfd::INVALID_FACE_GROUP_ID);
+  }
   face->setChannel(weak_from_this());
 
   m_channelFaces[remoteEndpoint] = face;

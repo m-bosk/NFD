@@ -93,6 +93,7 @@ struct FaceParams
   bool wantLocalFields = false;
   bool wantLpReliability = false;
   boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;
+  std::optional<uint64_t> groupId;
 };
 
 /**

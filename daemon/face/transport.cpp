@@ -133,6 +133,12 @@ Transport::canChangePriority() const noexcept
 }
 
 bool
+Transport::canChangeGroupId() const noexcept
+{
+  return false;
+}
+
+bool
 Transport::canChangePersistencyTo(ndn::nfd::FacePersistency newPersistency) const
 {
   // not changing, or setting initial persistency in subclass constructor

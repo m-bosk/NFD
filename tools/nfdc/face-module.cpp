@@ -62,7 +62,8 @@ FaceModule::registerCommands(CommandParser& parser)
     .addArg("congestion-marking", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
     .addArg("congestion-marking-interval", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
     .addArg("default-congestion-threshold", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
-    .addArg("mtu", ArgValueType::STRING, Required::NO, Positional::NO);
+    .addArg("mtu", ArgValueType::STRING, Required::NO, Positional::NO)
+    .addArg("group-id", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
   parser.addCommand(defFaceCreate, &FaceModule::create);
 
   CommandDefinition defFaceDestroy("face", "destroy");
@@ -79,6 +80,7 @@ FaceModule::list(ExecuteContext& ctx)
   auto localUri = ctx.args.getOptional<FaceUri>("local");
   auto uriScheme = ctx.args.getOptional<std::string>("scheme");
   auto priority = ctx.args.getOptional<InterestPriority>("priority");
+  auto groupId = ctx.args.getOptional<uint64_t>("group-id");
 
   FaceQueryFilter filter;
   if (remoteUri) {
@@ -92,6 +94,9 @@ FaceModule::list(ExecuteContext& ctx)
   }
   if (priority) {
     filter.setPriority(*priority);
+  }
+  if (groupId) {
+    filter.setGroupId(*groupId);
   }
 
   FindFace findFace(ctx);
@@ -170,6 +175,7 @@ FaceModule::create(ExecuteContext& ctx)
   auto baseCongestionMarkingIntervalMs = ctx.args.getOptional<uint64_t>("congestion-marking-interval");
   auto defaultCongestionThreshold = ctx.args.getOptional<uint64_t>("default-congestion-threshold");
   auto mtuArg = ctx.args.getOptional<std::string>("mtu");
+  auto groupIdArg = ctx.args.getOptional<uint64_t>("group-id");
 
   // MTU is nominally a uint64_t, but can be the string value 'auto' to unset an override MTU
   std::optional<uint64_t> mtu;
@@ -212,6 +218,11 @@ FaceModule::create(ExecuteContext& ctx)
     if (priority) {
       isChangingParams = true;
       params.setPriority(*priority);
+    }
+    
+    if (groupIdArg) {
+      isChangingParams = true;
+      params.setGroupId(*groupIdArg);
     }
 
     if (mtu && (!respParams.hasMtu() || respParams.getMtu() != *mtu)) {
@@ -266,6 +277,9 @@ FaceModule::create(ExecuteContext& ctx)
     params.setUri(canonicalRemote->toString());
     if (priority) {
       params.setPriority(*priority);
+    }
+    if (groupIdArg) {
+      params.setGroupId(*groupIdArg);
     }
     if (canonicalLocal) {
       params.setLocalUri(canonicalLocal->toString());
@@ -408,6 +422,7 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
 
   os << "<faceId>" << item.getFaceId() << "</faceId>";
   os << "<priority>" << item.getPriority() << "</priority>";
+  os << "<groupId>" << item.getGroupId() << "</groupId>";
   os << "<remoteUri>" << xml::Text{item.getRemoteUri()} << "</remoteUri>";
   os << "<localUri>" << xml::Text{item.getLocalUri()} << "</localUri>";
 
@@ -488,6 +503,7 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
 
   os << ia("faceid") << item.getFaceId();
   os << ia("priority") << item.getPriority();
+  os << ia("group-id") << item.getGroupId();
   os << ia("remote") << item.getRemoteUri();
   os << ia("local") << item.getLocalUri();
 
@@ -552,6 +568,7 @@ FaceModule::printSuccess(std::ostream& os,
   os << actionSummary << ' '
      << ia("id") << resp.getFaceId()
      << ia("priority") << resp.getPriority()
+     << ia("group-id") << resp.getGroupId()
      << ia("local") << resp.getLocalUri()
      << ia("remote") << resp.getUri()
      << ia("persistency") << resp.getFacePersistency();

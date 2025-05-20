@@ -401,8 +401,9 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
     bool isSoft = pitEntry->isSoftState;
     NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << "; soft state=" << isSoft << " with number of inRecords=" << pitEntry->getInRecords().size());
 
+    auto now = time::steady_clock::now();
+
     if (isSoft) {
-      auto now = time::steady_clock::now();
       bool isAnyValid = false;
       std::list<decltype(pitEntry->in_begin())> toDelete;
       for (auto iter = pitEntry->in_begin(); iter!= pitEntry->in_end(); ++iter) {

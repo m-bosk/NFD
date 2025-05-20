@@ -57,6 +57,7 @@ Face::Face(unique_ptr<LinkService> service, unique_ptr<Transport> transport)
 {
   m_service->setFaceAndTransport(*this, *m_transport);
   m_transport->setFaceAndLinkService(*this, *m_service);
+  setGroupId(ndn::nfd::INVALID_FACE_GROUP_ID);
 }
 
 std::ostream&
@@ -67,6 +68,7 @@ operator<<(std::ostream& os, const FaceLogHelper<Face>& flh)
      << ",priority=" << face.getPriority()
      << ",local=" << face.getLocalUri()
      << ",remote=" << face.getRemoteUri()
+     << ",groupId=" << face.getGroupId()
      << "]";
 
   return os;
