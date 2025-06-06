@@ -407,6 +407,9 @@ Forwarder::onIncomingData(const Data& data, const FaceEndpoint& ingress)
       bool isAnyValid = false;
       std::list<decltype(pitEntry->in_begin())> toDelete;
       for (auto iter = pitEntry->in_begin(); iter!= pitEntry->in_end(); ++iter) {
+        // TODO: Fix if pit entry soft, but inRecord not soft
+        // pitEntry->getInterest()
+        // iter->getInterest()
         auto& inRecord = *iter;
         NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName() << " matched with soft interest; expiers on=" << inRecord.getExpiry() << "; now is=" << now << "; diff=" << inRecord.getExpiry() - now << "; in=" << inRecord.getFace().getId() << "; facePrio=" << inRecord.getFace().getPriority());
         if (inRecord.getExpiry() >= now) {
