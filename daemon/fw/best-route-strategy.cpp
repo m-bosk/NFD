@@ -63,8 +63,9 @@ BestRouteStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
 {
   auto suppression = m_retxSuppression->decidePerPitEntry(*pitEntry);
   if (suppression == RetxSuppressionResult::SUPPRESS) {
-    NFD_LOG_INTEREST_FROM(interest, ingress, "suppressed");
-    return;
+    // NFD_LOG_INTEREST_FROM(interest, ingress, "suppressed");
+    // return;
+    NFD_LOG_INTEREST_FROM(interest, ingress, "should've been suppressed, but we're not suppressing...");
   }
 
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
