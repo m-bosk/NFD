@@ -252,23 +252,26 @@ Strategy::sendData(const Data& data, Face& egress, const shared_ptr<pit::Entry>&
   shared_ptr<lp::PitToken> pitToken;
   auto inRecord = pitEntry->findInRecord(egress);
   if (inRecord != pitEntry->in_end()) {
+    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " inRecord exitsts!");
     pitToken = inRecord->getInterest().getTag<lp::PitToken>();
-  }
 
-  // delete the PIT entry's in-record based on egress,
-  // since the Data is sent to the face from which the Interest was received
-  if (!pitEntry->isSoftState || pitEntry->isExpired) {
-    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " deleting inRecord");
-    pitEntry->deleteInRecord(inRecord);
-  } else {
-    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " was soft state. Not deleting inRecord");
-  }
-
-    if (pitToken != nullptr) {
-      Data data2 = data; // make a copy so each downstream can get a different PIT token
-      data2.setTag(pitToken);
-      return m_forwarder.onOutgoingData(data2, egress);
+    // delete the PIT entry's in-record based on egress,
+    // since the Data is sent to the face from which the Interest was received
+    if (!pitEntry->isSoftState || pitEntry->isExpired) {
+      NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " delete inRecord");
+      pitEntry->deleteInRecord(inRecord);
+    } else {
+      NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " was soft state and not expired. Not deleting inRecord");
     }
+  } else {
+    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " inRecord does NOT exist! Can't delete anything.");
+  }
+
+  if (pitToken != nullptr) {
+    Data data2 = data; // make a copy so each downstream can get a different PIT token
+    data2.setTag(pitToken);
+    return m_forwarder.onOutgoingData(data2, egress);
+  }
   return m_forwarder.onOutgoingData(data, egress);
 }
 
