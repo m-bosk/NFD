@@ -1,3 +1,7 @@
+**This branch contains modifications enabling ICN-based architecture for IVNs.** Supporting material for a publication submitted to IEEE Access.
+
+Modifications created by Jonas Neubacher before 14 February 2026.
+
 <div align="center">
 
 [<img alt height="65" src="docs/named_data_theme/static/ndn-logo.svg"/>](https://named-data.net/)
