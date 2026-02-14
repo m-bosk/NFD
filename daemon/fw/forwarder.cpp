@@ -55,6 +55,7 @@ Forwarder::Forwarder(FaceTable& faceTable)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
   , m_strategyChoice(*this)
+  , m_reservationTable()
 {
   m_faceTable.afterAdd.connect([this] (const Face& face) {
     face.afterReceiveInterest.connect(
@@ -149,6 +150,12 @@ Forwarder::onIncomingInterest(const Interest& interest, const FaceEndpoint& ingr
     // go to Interest loop pipeline
     this->onInterestLoop(interest, ingress);
     return;
+  }
+  
+  // Save reservation
+  if (interest.hasReservation()) {
+    m_reservationTable.addReservation(interest, ingress);
+    m_reservationTable.changeQdiscWithTimer();
   }
 
   // is pending?

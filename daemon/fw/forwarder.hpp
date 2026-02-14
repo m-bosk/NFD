@@ -38,6 +38,7 @@
 #include "table/strategy-choice.hpp"
 #include "table/dead-nonce-list.hpp"
 #include "table/network-region-table.hpp"
+#include "table/reservation-table.hpp"
 
 namespace nfd {
 
@@ -251,6 +252,9 @@ private:
   StrategyChoice     m_strategyChoice;
   DeadNonceList      m_deadNonceList;
   NetworkRegionTable m_networkRegionTable;
+
+  // @todo Change later maybe
+  ReservationTable   m_reservationTable;
 
   // allow Strategy (base class) to enter pipelines
   friend ::nfd::fw::Strategy;
