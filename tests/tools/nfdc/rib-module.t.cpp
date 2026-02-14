@@ -287,6 +287,7 @@ BOOST_AUTO_TEST_CASE(FaceNotExistFaceUri)
 
       ControlParameters resp = req;
       resp.setFaceId(255);
+      resp.setPriority(0);
       resp.setLocalUri("udp4://32.121.182.82:50000");
       resp.setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
       resp.setBaseCongestionMarkingInterval(100_ms);
@@ -317,7 +318,7 @@ BOOST_AUTO_TEST_CASE(FaceNotExistFaceUri)
 
   this->execute("route add /634jfAfdf udp4://202.83.168.28:6363 "
                 "origin 17591 cost 702 capture expires 727411987");
-  BOOST_CHECK(out.is_equal("face-created id=255 local=udp4://32.121.182.82:50000 "
+  BOOST_CHECK(out.is_equal("face-created id=255 priority=0 local=udp4://32.121.182.82:50000 "
                            "remote=udp4://202.83.168.28:6363 persistency=persistent "
                            "reliability=off congestion-marking=off "
                            "congestion-marking-interval=100ms default-congestion-threshold=65536B "
@@ -354,7 +355,8 @@ BOOST_AUTO_TEST_CASE(Ambiguous)
   BOOST_CHECK(err.is_equal("Multiple faces match specified remote FaceUri. "
                            "Re-run the command with a FaceId: "
                            "6720 (local=udp4://202.83.168.28:56363), "
-                           "31066 (local=udp4://25.90.26.32:56363)\n"));
+                           "31066 (local=udp4://25.90.26.32:56363), "
+                           "46853 (local=udp4://232.23.34.54:56363)\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCanonization)
@@ -447,7 +449,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
 
 BOOST_AUTO_TEST_CASE(MultipleFaces)
 {
-  std::set<uint64_t> faceIds{6720, 31066};
+  std::set<uint64_t> faceIds{6720, 31066, 46853};
   this->processInterest = [this, &faceIds] (const Interest& interest) {
     if (this->respondFaceQuery(interest)) {
       return;
@@ -468,7 +470,8 @@ BOOST_AUTO_TEST_CASE(MultipleFaces)
   BOOST_CHECK(faceIds.empty());
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("route-removed prefix=/nm5y8X8b2 nexthop=6720 origin=static\n"
-                           "route-removed prefix=/nm5y8X8b2 nexthop=31066 origin=static\n"));
+                           "route-removed prefix=/nm5y8X8b2 nexthop=31066 origin=static\n"
+                           "route-removed prefix=/nm5y8X8b2 nexthop=46853 origin=static\n"));
   BOOST_CHECK(err.is_empty());
 }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,23 +23,23 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "multicast-strategy.hpp"
+#include "multipath-strategy.hpp"
 #include "algorithm.hpp"
 #include "common/logger.hpp"
 
 namespace nfd::fw {
 
-NFD_REGISTER_STRATEGY(MulticastStrategy);
+NFD_REGISTER_STRATEGY(MultipathStrategy);
 
-NFD_LOG_INIT(MulticastStrategy);
+NFD_LOG_INIT(MultipathStrategy);
 
-MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
+MultipathStrategy::MultipathStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument(
-      "MulticastStrategy does not support version " + to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument("MultipathStrategy does not support version " +
+                                    std::to_string(*parsed.version)));
   }
 
   StrategyParameters params = parseParameters(parsed.parameters);
@@ -51,14 +51,14 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 }
 
 const Name&
-MulticastStrategy::getStrategyName()
+MultipathStrategy::getStrategyName()
 {
-  static const auto strategyName = Name("/localhost/nfd/strategy/multicast").appendVersion(4);
+  static const auto strategyName = Name("/localhost/nfd/strategy/multipath").appendVersion(0);
   return strategyName;
 }
 
 void
-MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
+MultipathStrategy::afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
@@ -67,10 +67,9 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
   for (const auto& nexthop : nexthops) {
     Face& outFace = nexthop.getFace();
 
-    RetxSuppressionResult suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
-
+    auto suppressResult = m_retxSuppression->decidePerUpstream(*pitEntry, outFace);
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
-      NFD_LOG_DEBUG(interest << " from=" << ingress << " to=" << outFace.getId() << " suppressed");
+      NFD_LOG_INTEREST_FROM(interest, ingress, "to=" << outFace.getId() << " suppressed");
       continue;
     }
 
@@ -78,7 +77,7 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
       continue;
     }
 
-    NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
+    NFD_LOG_INTEREST_FROM(interest, ingress, "to=" << outFace.getId());
     auto* sentOutRecord = this->sendInterest(interest, outFace, pitEntry);
     if (sentOutRecord && suppressResult == RetxSuppressionResult::FORWARD) {
       m_retxSuppression->incrementIntervalForOutRecord(*sentOutRecord);
@@ -87,28 +86,37 @@ MulticastStrategy::afterReceiveInterest(const Interest& interest, const FaceEndp
 }
 
 void
-MulticastStrategy::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
+MultipathStrategy::onInterestLoop(const Interest& interest, const FaceEndpoint& ingress)
 {
-  NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " name=" << interest.getName() << " nonce=" << interest.getNonce() << " ignoring duplicate interest");
+  NFD_LOG_DEBUG("onInterestLoop in=" << ingress << " name=" << interest.getName() << " nonce=" << interest.getNonce() << " process interest anyway");
+  
+  // // is pending?
+  // if (!pitEntry->hasInRecords()) {
+  //   m_cs.find(interest,
+  //             [=] (const Interest& i, const Data& d) { onContentStoreHit(i, ingress, pitEntry, d); },
+  //             [=] (const Interest& i) { onContentStoreMiss(i, ingress, pitEntry); });
+  // }
+  // else {
+  //   this->onContentStoreMiss(interest, ingress, pitEntry);
+  // }
 }
 
 void
-MulticastStrategy::afterNewNextHop(const fib::NextHop& nextHop,
+MultipathStrategy::afterNewNextHop(const fib::NextHop& nextHop,
                                    const shared_ptr<pit::Entry>& pitEntry)
 {
   // no need to check for suppression, as it is a new next hop
 
   auto nextHopFaceId = nextHop.getFace().getId();
-  auto& interest = pitEntry->getInterest();
+  const auto& interest = pitEntry->getInterest();
 
   // try to find an incoming face record that doesn't violate scope restrictions
   for (const auto& r : pitEntry->getInRecords()) {
     auto& inFace = r.getFace();
+
     if (isNextHopEligible(inFace, interest, nextHop, pitEntry)) {
-
-      NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " pitEntry-to=" << nextHopFaceId);
+      NFD_LOG_INTEREST_FROM(interest, inFace.getId(), "new-nexthop to=" << nextHopFaceId);
       this->sendInterest(interest, nextHop.getFace(), pitEntry);
-
       break; // just one eligible incoming face record is enough
     }
   }

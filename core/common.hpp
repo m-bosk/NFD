@@ -60,6 +60,7 @@
 
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/interest.hpp>
+#include <ndn-cxx/interest-priority.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/encoding/block.hpp>
 #include <ndn-cxx/lp/nack.hpp>
@@ -100,6 +101,7 @@ using ndn::Block;
 using ndn::Data;
 using ndn::FaceUri;
 using ndn::Interest;
+using ndn::InterestPriority;
 using ndn::Name;
 using ndn::PartialName;
 using ndn::Scheduler;

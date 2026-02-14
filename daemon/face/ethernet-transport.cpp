@@ -28,6 +28,7 @@
 #include "common/global.hpp"
 
 #include <pcap/pcap.h>
+#include <thread>
 
 #include <boost/endian/conversion.hpp>
 
@@ -75,21 +76,27 @@ void
 EthernetTransport::doClose()
 {
   NFD_LOG_FACE_TRACE(__func__);
-
+  NFD_LOG_DEBUG("Will close socket for face " << m_interfaceName);
   if (m_socket.is_open()) {
     // Cancel all outstanding operations and close the socket.
     // Use the non-throwing variants and ignore errors, if any.
     boost::system::error_code error;
+    NFD_LOG_DEBUG("Cancelling all outstanding operations for face " << m_interfaceName);
     m_socket.cancel(error);
+    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName);
     m_socket.close(error);
   }
-  m_pcap.close();
-
-  // Ensure that the Transport stays alive at least
-  // until all pending handlers are dispatched
-  getGlobalIoService().post([this] {
-    this->setState(TransportState::CLOSED);
-  });
+  std::thread([this] {
+    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - Close PCAP now");
+    m_pcap.close();
+    NFD_LOG_DEBUG("Closing the socket for face " << m_interfaceName << " - PCAP closed");
+    // Ensure that the Transport stays alive at least
+    // until all pending handlers are dispatched
+    boost::asio::defer(getGlobalIoService(), [this] {
+      NFD_LOG_DEBUG("Setting socket state for face " << m_interfaceName << " to closed.");
+      this->setState(TransportState::CLOSED);
+    });
+  }).detach();
 }
 
 void

@@ -57,7 +57,8 @@ public:
     REMOVE_LAST_NOTIFICATION = 1 << 0,
     SET_SCOPE_LOCAL          = 1 << 1,
     SET_URI_TEST             = 1 << 2,
-    RANDOMIZE_COUNTERS       = 1 << 3,
+    SET_PRIORITY_TEST        = 1 << 3,
+    RANDOMIZE_COUNTERS       = 1 << 4,
   };
 
   /** \brief Adds a face to the FaceTable.
@@ -75,8 +76,14 @@ public:
     if (flags & SET_URI_TEST) {
       uri = "test://";
     }
+    if (flags & SET_PRIORITY_TEST) {
+      uri = "priority://";
+    }
 
     auto face = make_shared<DummyFace>(uri, uri, scope);
+    if (flags & SET_PRIORITY_TEST) {
+      face->setPriority(2);
+    }
     m_faceTable.add(face);
 
     if (flags & RANDOMIZE_COUNTERS) {
@@ -157,7 +164,7 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
 {
   const size_t nEntries = 32;
   for (size_t i = 0; i < nEntries; ++i) {
-    addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST | RANDOMIZE_COUNTERS);
+    addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST | SET_PRIORITY_TEST | RANDOMIZE_COUNTERS);
   }
 
   receiveInterest(Interest("/localhost/nfd/faces/list").setCanBePrefix(true));
@@ -179,6 +186,7 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
   BOOST_REQUIRE(face != nullptr);
 
   // check face properties
+  BOOST_CHECK_EQUAL(status.getPriority(), face->getPriority());
   BOOST_CHECK_EQUAL(status.getRemoteUri(), face->getRemoteUri().toString());
   BOOST_CHECK_EQUAL(status.getLocalUri(), face->getLocalUri().toString());
   BOOST_CHECK_EQUAL(status.hasExpirationPeriod(),
@@ -214,6 +222,7 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto face1 = addFace(REMOVE_LAST_NOTIFICATION); // dummy://
   auto face2 = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // dummy://, local
   auto face3 = addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST); // test://
+  auto face4 = addFace(REMOVE_LAST_NOTIFICATION | SET_PRIORITY_TEST); // priority://
 
   auto generateQuery = [] (const auto& filter) {
     return Interest(Name("/localhost/nfd/faces/query").append(tlv::GenericNameComponent, filter.wireEncode()))
@@ -223,16 +232,18 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto schemeQuery = generateQuery(FaceQueryFilter().setUriScheme("dummy"));
   auto idQuery = generateQuery(FaceQueryFilter().setFaceId(face1->getId()));
   auto scopeQuery = generateQuery(FaceQueryFilter().setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL));
+  auto priorityQuery = generateQuery(FaceQueryFilter().setPriority(face4->getPriority()));
   auto invalidQueryName = Name("/localhost/nfd/faces/query")
                           .append(tlv::GenericNameComponent, ndn::makeStringBlock(tlv::Content, "invalid"));
   auto invalidQuery = Interest(invalidQueryName).setCanBePrefix(true);
 
   receiveInterest(schemeQuery); // face1 and face2 expected
   receiveInterest(idQuery); // face1 expected
-  receiveInterest(scopeQuery); // face1 and face3 expected
+  receiveInterest(scopeQuery); // face1, face3 and face4 expected
+  receiveInterest(priorityQuery); // face4 expected
   receiveInterest(invalidQuery); // nack expected
 
-  BOOST_REQUIRE_EQUAL(m_responses.size(), 4);
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 5);
 
   Block content;
   ndn::nfd::FaceStatus status;
@@ -253,14 +264,21 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
 
   content = m_responses[2].getContent();
   content.parse();
-  BOOST_CHECK_EQUAL(content.elements().size(), 2); // face1 and face3
+  BOOST_CHECK_EQUAL(content.elements().size(), 3); // face1, face3 and face4
   status.wireDecode(content.elements()[0]);
   BOOST_CHECK_EQUAL(face1->getId(), status.getFaceId());
   status.wireDecode(content.elements()[1]);
   BOOST_CHECK_EQUAL(face3->getId(), status.getFaceId());
 
+  content = m_responses[3].getContent();
+  content.parse();
+  BOOST_CHECK_EQUAL(content.elements().size(), 1); // face4
+  status.wireDecode(content.elements()[0]);
+  BOOST_CHECK_EQUAL(face4->getId(), status.getFaceId());
+  BOOST_CHECK_EQUAL(face4->getPriority(), status.getPriority());
+
   ControlResponse expectedResponse(400, "Malformed filter"); // nack, 400, malformed filter
-  BOOST_CHECK_EQUAL(checkResponse(3, invalidQueryName, expectedResponse, tlv::ContentType_Nack),
+  BOOST_CHECK_EQUAL(checkResponse(4, invalidQueryName, expectedResponse, tlv::ContentType_Nack),
                     CheckResponseResult::OK);
 }
 
@@ -340,8 +358,9 @@ BOOST_AUTO_TEST_SUITE(Notifications)
 
 BOOST_AUTO_TEST_CASE(FaceEventCreated)
 {
-  auto face = addFace(); // trigger FACE_EVENT_CREATED notification
+  auto face = addFace(SET_PRIORITY_TEST); // trigger FACE_EVENT_CREATED notification
   BOOST_CHECK_NE(face->getId(), face::INVALID_FACEID);
+  face->setPriority(2);
   FaceId faceId = face->getId();
 
   BOOST_CHECK_EQUAL(m_manager.m_faceStateChangeConn.count(faceId), 1);
@@ -353,6 +372,7 @@ BOOST_AUTO_TEST_CASE(FaceEventCreated)
   ndn::nfd::FaceEventNotification notification(payload);
   BOOST_CHECK_EQUAL(notification.getKind(), ndn::nfd::FACE_EVENT_CREATED);
   BOOST_CHECK_EQUAL(notification.getFaceId(), faceId);
+  BOOST_CHECK_EQUAL(notification.getPriority(), 2);
   BOOST_CHECK_EQUAL(notification.getRemoteUri(), face->getRemoteUri().toString());
   BOOST_CHECK_EQUAL(notification.getLocalUri(), face->getLocalUri().toString());
   BOOST_CHECK_EQUAL(notification.getFaceScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
@@ -412,7 +432,7 @@ BOOST_AUTO_TEST_CASE(FaceEventDownUp)
 
 BOOST_AUTO_TEST_CASE(FaceEventDestroyed)
 {
-  auto face = addFace();
+  auto face = addFace(SET_PRIORITY_TEST);
   BOOST_CHECK_NE(face->getId(), face::INVALID_FACEID);
   FaceId faceId = face->getId();
 
@@ -428,6 +448,7 @@ BOOST_AUTO_TEST_CASE(FaceEventDestroyed)
   ndn::nfd::FaceEventNotification notification(payload);
   BOOST_CHECK_EQUAL(notification.getKind(), ndn::nfd::FACE_EVENT_DESTROYED);
   BOOST_CHECK_EQUAL(notification.getFaceId(), faceId);
+  BOOST_CHECK_EQUAL(notification.getPriority(), face->getPriority());
   BOOST_CHECK_EQUAL(notification.getRemoteUri(), face->getRemoteUri().toString());
   BOOST_CHECK_EQUAL(notification.getLocalUri(), face->getLocalUri().toString());
   BOOST_CHECK_EQUAL(notification.getFaceScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);

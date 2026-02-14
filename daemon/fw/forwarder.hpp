@@ -38,6 +38,7 @@
 #include "table/strategy-choice.hpp"
 #include "table/dead-nonce-list.hpp"
 #include "table/network-region-table.hpp"
+#include "multipath-duplicate-detection.hpp"
 
 namespace nfd {
 
@@ -234,6 +235,7 @@ NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
     /// Initial value of HopLimit that should be added to Interests that don't have one.
     /// A value of zero disables the feature.
     uint8_t defaultHopLimit = 0;
+    uint16_t duplicateMemoryCapacity = 0;
   };
   Config m_config;
 
@@ -251,6 +253,8 @@ private:
   StrategyChoice     m_strategyChoice;
   DeadNonceList      m_deadNonceList;
   NetworkRegionTable m_networkRegionTable;
+
+  MultipathDuplicateDetection m_observedData;
 
   // allow Strategy (base class) to enter pipelines
   friend ::nfd::fw::Strategy;

@@ -7,6 +7,9 @@ general
 
   ; user ndn-user
   ; group ndn-user
+
+  ; Specify whether faces should be updated after network change is detected.
+  network_change_detection yes
 }
 
 log
@@ -49,6 +52,11 @@ forwarder
   ; A value of 0 disables adding the HopLimit.
   ; Must be between 0 and 255. The default is 0.
   default_hop_limit 0
+
+  ; Specify how many data packets will be remembered for duplicate detection.
+  ; A value of 0 disables adding the duplicate detection.
+  ; Must be between 0 and 65535. The default is 0.
+  duplicate_memory_capacity 0
 }
 
 ; The tables section configures the CS, PIT, FIB, Strategy Choice, and Measurements

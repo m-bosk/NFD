@@ -233,6 +233,32 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(UpdatePersistency, T, UpdatePersistencyTests, F
   });
 }
 
+// NOTE: Cannot test Ethernet due to required root permissions
+BOOST_AUTO_TEST_CASE(UpdatePriority)
+{
+  createFace("udp4://127.0.0.1:26323");
+
+  ControlParameters updateParams;
+  updateParams.setFaceId(faceId);
+  updateParams.setPriority(2);
+
+  updateFace(updateParams, false, [] (const ControlResponse& actual) {
+    BOOST_CHECK_EQUAL(actual.getCode(), 409);
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(!actualParams.hasFaceId());
+      BOOST_REQUIRE(actualParams.hasPriority());
+      BOOST_CHECK_EQUAL(actualParams.getPriority(), 2);
+    }
+    else {
+      BOOST_ERROR("Response does not contain ControlParameters");
+    }
+  });
+}
+
 BOOST_AUTO_TEST_CASE(UpdateMtu)
 {
   createFace("udp4://127.0.0.1:26363");

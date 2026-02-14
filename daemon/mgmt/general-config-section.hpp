@@ -30,6 +30,8 @@
 
 namespace nfd::general {
 
+extern bool enableNetChangeDetection;
+
 void
 setConfigFile(ConfigFile& config);
 

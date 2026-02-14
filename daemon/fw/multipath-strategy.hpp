@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,49 +23,44 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_UNICAST_ETHERNET_TRANSPORT_HPP
-#define NFD_DAEMON_FACE_UNICAST_ETHERNET_TRANSPORT_HPP
+#ifndef NFD_DAEMON_FW_MULTIPATH_STRATEGY_HPP
+#define NFD_DAEMON_FW_MULTIPATH_STRATEGY_HPP
 
-#include "ethernet-transport.hpp"
+#include "strategy.hpp"
+#include "retx-suppression-exponential.hpp"
 
-namespace nfd::face {
+namespace nfd::fw {
 
 /**
- * @brief A unicast Transport that uses raw Ethernet II frames
+ * \brief A forwarding strategy that forwards Interests to all FIB nexthops.
  */
-class UnicastEthernetTransport final : public EthernetTransport
+class MultipathStrategy : public Strategy
 {
 public:
-  /**
-   * @brief Creates an Ethernet-based transport for unicast communication
-   */
-  UnicastEthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
-                           const ethernet::Address& remoteEndpoint,
-                           ndn::nfd::FacePersistency persistency,
-                           time::nanoseconds idleTimeout);
+  explicit
+  MultipathStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
 
-protected:
-  bool
-  canChangePriority() const noexcept override final;
+  static const Name&
+  getStrategyName();
 
-  bool
-  canChangeGroupId() const noexcept override final;
-
-  bool
-  canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const final;
+public: // triggers
+  void
+  afterReceiveInterest(const Interest& interest, const FaceEndpoint& ingress,
+                       const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
-  afterChangePersistency(ndn::nfd::FacePersistency oldPersistency) final;
+  onInterestLoop(const Interest& interest, const FaceEndpoint& ingress) override;
+  // {
+  //   // do nothing
+  // }
 
-private:
   void
-  scheduleClosureWhenIdle();
+  afterNewNextHop(const fib::NextHop& nextHop, const shared_ptr<pit::Entry>& pitEntry) override;
 
-private:
-  const time::nanoseconds m_idleTimeout;
-  scheduler::ScopedEventId m_closeIfIdleEvent;
+NFD_PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  std::unique_ptr<RetxSuppressionExponential> m_retxSuppression;
 };
 
-} // namespace nfd::face
+} // namespace nfd::fw
 
-#endif // NFD_DAEMON_FACE_UNICAST_ETHERNET_TRANSPORT_HPP
+#endif // NFD_DAEMON_FW_MULTIPATH_STRATEGY_HPP

@@ -61,6 +61,19 @@ public:
   }
 };
 
+class TcpFacePersistentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  }
+};
+
 class TcpFacePermanent
 {
 public:
@@ -68,6 +81,19 @@ public:
   getParameters()
   {
     return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  }
+};
+
+class TcpFacePermanentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
       .setUri("tcp4://127.0.0.1:26363")
       .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   }
@@ -97,6 +123,19 @@ public:
   }
 };
 
+class UdpFacePersistentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
+      .setUri("udp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  }
+};
+
 class UdpFacePermanent
 {
 public:
@@ -104,6 +143,19 @@ public:
   getParameters()
   {
     return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  }
+};
+
+class UdpFacePermanentWithPriority
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setPriority(2)
       .setUri("udp4://127.0.0.1:26363")
       .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   }
@@ -302,31 +354,35 @@ public:
   }
 };
 
-namespace mpl = boost::mpl;
-
-// pairs of CreateCommand and Success/Failure status
-using TestCases = mpl::vector<
-                    mpl::pair<TcpFaceOnDemand, CommandFailure<406>>,
-                    mpl::pair<TcpFacePersistent, CommandSuccess>,
-                    mpl::pair<TcpFacePermanent, CommandSuccess>,
-                    mpl::pair<UdpFaceOnDemand, CommandFailure<406>>,
-                    mpl::pair<UdpFacePersistent, CommandSuccess>,
-                    mpl::pair<UdpFacePermanent, CommandSuccess>,
-                    mpl::pair<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
-                    mpl::pair<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
-                    mpl::pair<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
-                    mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>,
-                    mpl::pair<TcpFaceLpReliabilityEnabled, CommandSuccess>,
-                    mpl::pair<TcpFaceLpReliabilityDisabled, CommandSuccess>,
-                    mpl::pair<UdpFaceLpReliabilityEnabled, CommandSuccess>,
-                    mpl::pair<UdpFaceLpReliabilityDisabled, CommandSuccess>,
-                    mpl::pair<TcpFaceCongestionMarkingEnabled, CommandSuccess>,
-                    mpl::pair<TcpFaceCongestionMarkingDisabled, CommandSuccess>,
-                    mpl::pair<TcpFaceMtuOverride, CommandFailure<406>>,
-                    mpl::pair<UdpFaceMtuOverride, CommandSuccess>,
-                    mpl::pair<FaceUriMalformed, CommandFailure<400>>,
-                    mpl::pair<FaceUriNonCanonical, CommandFailure<400>>,
-                    mpl::pair<FaceUriUnsupportedScheme, CommandFailure<406>>>;
+// Pairs of CreateCommand and success/failure status
+// NOTE: Cannot test Ethernet due to required root permissions
+using TestCases = boost::mp11::mp_list<
+  boost::mp11::mp_list<TcpFaceOnDemand, CommandFailure<406>>,
+  boost::mp11::mp_list<TcpFacePersistent, CommandSuccess>,
+  boost::mp11::mp_list<TcpFacePersistentWithPriority, CommandFailure<406>>,
+  boost::mp11::mp_list<TcpFacePermanent, CommandSuccess>,
+  boost::mp11::mp_list<TcpFacePermanentWithPriority, CommandFailure<406>>,
+  boost::mp11::mp_list<UdpFaceOnDemand, CommandFailure<406>>,
+  boost::mp11::mp_list<UdpFacePersistent, CommandSuccess>,
+  boost::mp11::mp_list<UdpFacePersistentWithPriority, CommandFailure<406>>,
+  boost::mp11::mp_list<UdpFacePermanent, CommandSuccess>,
+  boost::mp11::mp_list<UdpFacePermanentWithPriority, CommandFailure<406>>,
+  boost::mp11::mp_list<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
+  boost::mp11::mp_list<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
+  boost::mp11::mp_list<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
+  boost::mp11::mp_list<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceLpReliabilityEnabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceLpReliabilityDisabled, CommandSuccess>,
+  boost::mp11::mp_list<UdpFaceLpReliabilityEnabled, CommandSuccess>,
+  boost::mp11::mp_list<UdpFaceLpReliabilityDisabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceCongestionMarkingEnabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceCongestionMarkingDisabled, CommandSuccess>,
+  boost::mp11::mp_list<TcpFaceMtuOverride, CommandFailure<406>>,
+  boost::mp11::mp_list<UdpFaceMtuOverride, CommandSuccess>,
+  boost::mp11::mp_list<FaceUriMalformed, CommandFailure<400>>,
+  boost::mp11::mp_list<FaceUriNonCanonical, CommandFailure<400>>,
+  boost::mp11::mp_list<FaceUriUnsupportedScheme, CommandFailure<406>>
+>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixture)
 {
@@ -351,6 +407,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
       ControlParameters actualParams(actual.getBody());
 
       BOOST_CHECK(actualParams.hasFaceId());
+      if (expectedParams.hasPriority()) {
+        BOOST_CHECK_EQUAL(expectedParams.getPriority(), actualParams.getPriority());
+      }
       BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
 
       if (actual.getCode() == 200) {

@@ -37,8 +37,10 @@ BOOST_FIXTURE_TEST_SUITE(TestPit, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(Find)
 {
-  auto interest1 = makeInterest("/6hNwxJjw");
-  auto interest2 = makeInterest("/v65zqxm4d");
+  auto interest1    = makeInterest("/6hNwxJjw");
+  auto interest1_wp = makeInterest("/6hNwxJjw");
+  interest1_wp->setPriority(2);
+  auto interest2    = makeInterest("/v65zqxm4d");
 
   NameTree nameTree(16);
   Pit pit(nameTree);
@@ -48,6 +50,11 @@ BOOST_AUTO_TEST_CASE(Find)
   shared_ptr<pit::Entry> found1b = pit.find(*interest1);
   BOOST_CHECK(found1a != nullptr);
   BOOST_CHECK(found1a == found1b);
+
+  BOOST_REQUIRE_NE(interest1_wp, interest1);
+  shared_ptr<pit::Entry> found1_wp = pit.find(*interest1_wp);
+  BOOST_CHECK(found1_wp != nullptr);
+  BOOST_CHECK(found1_wp == found1b);
 
   shared_ptr<pit::Entry> found2 = pit.find(*interest2);
   BOOST_CHECK(found2 == nullptr);
@@ -90,6 +97,13 @@ BOOST_AUTO_TEST_CASE(Insert)
   interestC->setMustBeFresh(true);
   std::tie(entry, isNew) = pit.insert(*interestC);
   BOOST_CHECK_EQUAL(isNew, true);
+  BOOST_CHECK_EQUAL(pit.size(), 3);
+
+  // different Priority, same PIT entry
+  auto interestP = make_shared<Interest>(*interestA);
+  interestP->setPriority(2);
+  std::tie(entry, isNew) = pit.insert(*interestP);
+  BOOST_CHECK_EQUAL(isNew, false);
   BOOST_CHECK_EQUAL(pit.size(), 3);
 
   // different InterestLifetime, same PIT entry

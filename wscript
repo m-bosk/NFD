@@ -35,7 +35,7 @@ def options(opt):
     opt.load(['default-compiler-flags',
               'coverage', 'pch', 'sanitizers', 'boost',
               'dependency-checker', 'unix-socket', 'websocket',
-              'doxygen', 'sphinx_build'],
+              'doxygen', 'sphinx', 'clang_compilation_database'],
              tooldir=['.waf-tools'])
 
     optgrp = opt.add_option_group('NFD Options')
@@ -146,6 +146,9 @@ def configure(conf):
     # will not appear in the config header, but will instead be passed directly to the
     # compiler on the command line.
     conf.write_config_header('core/config.hpp', define_prefix='NFD_')
+
+    # generate compilation database
+    conf.load('clang_compilation_database')
 
 def build(bld):
     versionhpp(bld)

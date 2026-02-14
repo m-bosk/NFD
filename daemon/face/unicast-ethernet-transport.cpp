@@ -65,6 +65,18 @@ UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterf
 }
 
 bool
+UnicastEthernetTransport::canChangePriority() const noexcept
+{
+  return true;
+}
+
+bool
+UnicastEthernetTransport::canChangeGroupId() const noexcept
+{
+  return false; // TODO: Likely change
+}
+
+bool
 UnicastEthernetTransport::canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const
 {
   return true;

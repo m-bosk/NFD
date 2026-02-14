@@ -83,6 +83,7 @@ using EndpointId = std::variant<std::monostate, ethernet::Address, udp::Endpoint
  */
 struct FaceParams
 {
+  InterestPriority priority;
   ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   std::optional<time::nanoseconds> baseCongestionMarkingInterval;
   std::optional<uint64_t> defaultCongestionThreshold;
@@ -90,6 +91,7 @@ struct FaceParams
   bool wantLocalFields = false;
   bool wantLpReliability = false;
   boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;
+  std::optional<uint64_t> groupId;
 };
 
 /** \brief For internal use by FaceLogging macros.

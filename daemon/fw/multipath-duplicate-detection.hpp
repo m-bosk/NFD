@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,37 +23,35 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "face.hpp"
+#ifndef NFD_DAEMON_FW_MULTIPATH_DUPLICATE_DETECTION_HPP
+#define NFD_DAEMON_FW_MULTIPATH_DUPLICATE_DETECTION_HPP
 
-namespace nfd::face {
+#include <iostream>
+#include <queue>
+#include <unordered_set>
+#include <ndn-cxx/encoding/block.hpp>
 
-Face::Face(unique_ptr<LinkService> service, unique_ptr<Transport> transport)
-  : afterReceiveInterest(service->afterReceiveInterest)
-  , afterReceiveData(service->afterReceiveData)
-  , afterReceiveNack(service->afterReceiveNack)
-  , onDroppedInterest(service->onDroppedInterest)
-  , afterStateChange(transport->afterStateChange)
-  , m_service(std::move(service))
-  , m_transport(std::move(transport))
-  , m_counters(m_service->getCounters(), m_transport->getCounters())
-{
-  m_service->setFaceAndTransport(*this, *m_transport);
-  m_transport->setFaceAndLinkService(*this, *m_service);
-  setGroupId(ndn::nfd::INVALID_FACE_GROUP_ID);
+namespace nfd {
+
+    /**
+     * \brief Stores max_size elements and enables verification if an element already exists within the structure.
+     * Uses a std::queue to monitor the order of packets and allow last max_size packets to be stored.
+     * Uses a std::unordered_set for O(1) lookup of whether an element is present in the structure
+     */
+    class MultipathDuplicateDetection
+    {
+        private:
+            size_t capacity = 0;
+            std::queue<std::string> qe;
+            std::unordered_set<std::string> st;
+
+        public:
+            MultipathDuplicateDetection() : st() {}
+            void init(size_t size);
+            void push(ndn::Block val);
+            bool exists(ndn::Block val) const;
+
+    }; // namespace nfd::fw
+
 }
-
-std::ostream&
-operator<<(std::ostream& os, const FaceLogHelper<Face>& flh)
-{
-  const Face& face = flh.obj;
-  os << "[id=" << face.getId()
-     << ",priority=" << face.getPriority()
-     << ",local=" << face.getLocalUri()
-     << ",remote=" << face.getRemoteUri()
-     << ",groupId=" << face.getGroupId()
-     << "]";
-
-  return os;
-}
-
-} // namespace nfd::face
+#endif // NFD_DAEMON_FW_MULTIPATH_DUPLICATE_DETECTION_HPP

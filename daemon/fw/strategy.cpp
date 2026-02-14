@@ -32,6 +32,7 @@
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <unordered_set>
+#include <unordered_map>
 
 namespace nfd::fw {
 
@@ -239,18 +240,21 @@ Strategy::sendData(const Data& data, Face& egress, const shared_ptr<pit::Entry>&
   BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
 
   shared_ptr<lp::PitToken> pitToken;
-  auto inRecord = pitEntry->getInRecord(egress);
+  auto inRecord = pitEntry->findInRecord(egress);
   if (inRecord != pitEntry->in_end()) {
+    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " inRecord exitsts!");
     pitToken = inRecord->getInterest().getTag<lp::PitToken>();
-  }
 
-  // delete the PIT entry's in-record based on egress,
-  // since the Data is sent to the face from which the Interest was received
-  if (!pitEntry->isSoftState || pitEntry->isExpired) {
-    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired);
-    pitEntry->deleteInRecord(egress);
+    // delete the PIT entry's in-record based on egress,
+    // since the Data is sent to the face from which the Interest was received
+    if (!pitEntry->isSoftState || pitEntry->isExpired) {
+      NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " delete inRecord");
+      pitEntry->deleteInRecord(inRecord);
+    } else {
+      NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " was soft state and not expired. Not deleting inRecord");
+    }
   } else {
-    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " was soft state. Not deleting inRecord");
+    NFD_LOG_DEBUG("sendData, interest=" << pitEntry->getName() << " " << pitEntry->isSoftState << " " << pitEntry->isExpired << " inRecord does NOT exist! Can't delete anything.");
   }
 
   if (pitToken != nullptr) {
@@ -267,15 +271,40 @@ Strategy::sendDataToAll(const Data& data, const shared_ptr<pit::Entry>& pitEntry
   std::set<Face*> pendingDownstreams;
   auto now = time::steady_clock::now();
 
+  std::unordered_map<uint64_t, uint64_t> groupToPrio;
+  std::unordered_map<uint64_t, Face*> groupToDownstream;
+
   // remember pending downstreams
   for (const auto& inRecord : pitEntry->getInRecords()) {
+    NFD_LOG_TRACE("sendDataToAll name=" << inRecord.getInterest().getName() << " faceId=" << inRecord.getFace().getId());
     if (inRecord.getExpiry() > now) {
       if (inRecord.getFace().getId() == inFace.getId() &&
           inRecord.getFace().getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
         continue;
       }
-      pendingDownstreams.emplace(&inRecord.getFace());
+      if (inRecord.getFace().getGroupId() != ndn::nfd::INVALID_FACE_GROUP_ID) {
+        uint64_t groupId = inRecord.getFace().getGroupId();
+        if (groupId == inFace.getGroupId()) {
+          continue;
+        }
+        if (groupToPrio.find(groupId) != groupToPrio.end()) {
+          if (inRecord.getFace().getPriority() > groupToPrio[groupId]) {
+            groupToPrio[groupId] = inRecord.getFace().getPriority();
+            groupToDownstream[groupId] = &inRecord.getFace();
+          }
+        } else {
+          groupToPrio[groupId] = inRecord.getFace().getPriority();
+          groupToDownstream[groupId] = &inRecord.getFace();
+        }
+      } else {
+        pendingDownstreams.emplace(&inRecord.getFace());
+      }
+      NFD_LOG_DEBUG("TESTING STRATEGY: Deciding where to forward data for name=" << inRecord.getInterest().getName() << ". Selected - faceId=" << inRecord.getFace().getId() << "; prio=" << inRecord.getFace().getPriority() << "; group-id=" << inRecord.getFace().getGroupId());
     }
+  }
+
+  for (const auto& downstreamPair : groupToDownstream) {
+    pendingDownstreams.emplace(downstreamPair.second);
   }
 
   for (const auto& pendingDownstream : pendingDownstreams) {

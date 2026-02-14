@@ -255,6 +255,18 @@ UdpFactory::doCreateFace(const CreateFaceRequest& req,
     return;
   }
 
+  if (req.params.priority) {
+    NFD_LOG_TRACE("createFace: unsupported Priority");
+    onFailure(406, "UDP faces do not support priority");
+    return;
+  }
+
+  if (req.params.groupId) {
+    NFD_LOG_TRACE("createFace: unsupported GroupId");
+    onFailure(406, "UDP faces do not support GroupId");
+    return;
+  }
+
   if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
     onFailure(406, "Outgoing UDP faces do not support on-demand persistency");

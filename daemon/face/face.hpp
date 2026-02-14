@@ -134,6 +134,44 @@ public: // properties
   }
 
   /**
+   * \brief Returns the face group id.
+   */
+  uint64_t
+  getGroupId() const
+  {
+    return m_groupId;
+  }
+
+  /**
+   * \brief Sets the face group id.
+   */
+  void
+  setGroupId(const uint64_t groupId) noexcept
+  {
+    m_groupId = groupId;
+  }
+
+  /**
+   * \brief Returns the face priority.
+   */
+  const InterestPriority&
+  getPriority() const noexcept
+  {
+    return m_priority;
+  }
+
+  /**
+   * \brief Sets the face priority.
+   * \note Normally, this should only be invoked by the
+   *       ethernet channel during face creation.
+   */
+  void
+  setPriority(const InterestPriority& priority) noexcept
+  {
+    m_priority = priority;
+  }
+
+  /**
    * \brief Returns a FaceUri representing the local endpoint.
    */
   FaceUri
@@ -227,10 +265,12 @@ public: // properties
 
 private:
   FaceId m_id = INVALID_FACEID;
+  InterestPriority m_priority;
   unique_ptr<LinkService> m_service;
   unique_ptr<Transport> m_transport;
   FaceCounters m_counters;
   weak_ptr<Channel> m_channel;
+  uint64_t m_groupId;
 };
 
 inline void

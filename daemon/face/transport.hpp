@@ -221,6 +221,22 @@ public: // static properties
   }
 
   /**
+   * \brief Check whether the priority can be changed.
+   *
+   * \return true if the change can be performed, false otherwise
+   */
+  virtual bool
+  canChangePriority() const noexcept;
+
+  /**
+   * \brief Check whether the groupId can be changed.
+   *
+   * \return true if the change can be performed, false otherwise
+   */
+  virtual bool
+  canChangeGroupId() const noexcept;
+
+  /**
    * \brief Returns the current persistency setting of the transport.
    */
   ndn::nfd::FacePersistency

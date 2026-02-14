@@ -179,6 +179,7 @@ BOOST_FIXTURE_TEST_CASE(Normal, ProcedureFixture<ProcedureSuccessFailure>)
 
       nfd::ControlParameters resp;
       resp.setFaceId(1178)
+          .setPriority(0)
           .setUri("udp4://188.7.60.95:6363")
           .setLocalUri("udp4://110.69.164.68:23197")
           .setFacePersistency(nfd::FacePersistency::FACE_PERSISTENCY_PERSISTENT)
@@ -234,6 +235,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
     if (req) {
       nfd::ControlParameters resp;
       resp.setFaceId(3146)
+          .setPriority(0)
           .setUri("tcp4://40.23.174.71:6363")
           .setLocalUri("tcp4://34.213.69.67:14445")
           .setFacePersistency(nfd::FacePersistency::FACE_PERSISTENCY_PERSISTENT)

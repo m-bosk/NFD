@@ -101,6 +101,20 @@ enum class ArgValueType {
    *  The argument appears in CommandArguments as ndn::nfd::RouteOrigin.
    */
   ROUTE_ORIGIN,
+
+  /**
+   * \brief Priority.
+   *
+   * The argument appears in CommandArguments as ndn::nfd::Priority.
+   */
+  PRIORITY,
+  
+  /**
+   * \brief GroupId.
+   *
+   * The argument appears in CommandArguments as ndn::nfd::GroupId.
+   */
+  GROUP_ID,
 };
 
 std::ostream&
